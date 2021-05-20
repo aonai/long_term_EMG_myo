@@ -8,7 +8,7 @@ from torch.utils.data import TensorDataset
 def get_dataloader(examples_datasets, labels_datasets, number_of_cycle_for_first_training=40,
                    number_of_cycles_rest_of_training=40, batch_size=128,
                    drop_last=True, shuffle=True,
-                   number_of_cycles_total=40, validation_set_ratio=0.1, get_validation_set=True, cycle_for_test=None):
+                   number_of_cycles_total=4, validation_set_ratio=0.1, get_validation_set=True, cycle_for_test=None):
     """
     Args:
         examples_datasets
@@ -25,7 +25,7 @@ def get_dataloader(examples_datasets, labels_datasets, number_of_cycle_for_first
     Returns: 
         training, validation, and test dataloaders in shape (num_participants x num_sessions)
             expected total shape of each dataloader =  
-                    (num_trails*num_examples_window*num_mov(40*26*22=22880 total) x window_size(50) x num_channel(8))
+                    (num_trails*num_examples_window*num_mov(40*26*22=22880 total) x features_windwo(252))
                         num_trails = 0.9*total for training 
                                    = 0.1*total for training 
                                    = 10 for testing 
@@ -50,8 +50,6 @@ def get_dataloader(examples_datasets, labels_datasets, number_of_cycle_for_first
             X_test_associated_with_training_i, Y_test_associated_with_training_i = [], []
             for cycle in range(number_of_cycles_total):
                 examples_cycles = training_index_examples[cycle]
-                # flatten window_size x num_channel in each signal recording (this is for TSD model training matmul)
-                examples_cycles = np.reshape(examples_cycles, (-1, 400))
                 labels_cycles = training_index_labels[cycle]
 
                 # print("      GET one examples_cycles ", np.shape(examples_cycles), " at ", cycle)

@@ -112,11 +112,10 @@ def load_checkpoint(model, filename, optimizer=None, scheduler=None, strict=True
 
     return model, optimizer, scheduler, start_epoch
 
-
 def train_fine_tuning(examples_datasets_train, labels_datasets_train, num_kernels,
                                   number_of_cycle_for_first_training=40, number_of_cycles_rest_of_training=40,
                                   path_weight_to_save_to="Weights_TSD/unknown", number_of_classes=22, batch_size=128,
-                                  feature_vector_input_length=400, learning_rate=0.002515):
+                                  feature_vector_input_length=252, learning_rate=0.002515):
     """
     examples_datasets_train
     labels_datasets_train
@@ -126,7 +125,7 @@ def train_fine_tuning(examples_datasets_train, labels_datasets_train, num_kernel
     path_weight_to_save_to
     number_of_classes
     batch_size
-    feature_vector_input_length: length of one example data (window_size(50) x num_channel(8) = 400)
+    feature_vector_input_length: length of one example data (252)
     learning_rate
     """ 
     participants_train, participants_validation, _ = load_dataloaders_training_sessions(
@@ -151,7 +150,7 @@ def train_fine_tuning(examples_datasets_train, labels_datasets_train, num_kernel
             optimizer = optim.Adam(model.parameters(), lr=learning_rate, betas=(0.5, 0.999))
 
             # Define Scheduler
-            precision = 1e-8
+            precision = 1e-4
             scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer=optimizer, mode='min', factor=.2, patience=5,
                                                              verbose=True, eps=precision)
 
@@ -177,7 +176,7 @@ def train_fine_tuning(examples_datasets_train, labels_datasets_train, num_kernel
 
 
 def test_TSD_DNN_on_training_sessions(examples_datasets_train, labels_datasets_train, num_neurons,
-                                      feature_vector_input_length=400,
+                                      feature_vector_input_length=252,
                                       path_weights='/Weights_TSD', save_path='results_tsd', algo_name="Normal_Training",
                                       use_only_first_training=False, cycle_for_test=None,
                                       number_of_classes=22):
@@ -185,7 +184,7 @@ def test_TSD_DNN_on_training_sessions(examples_datasets_train, labels_datasets_t
     examples_datasets_train
     labels_datasets_train
     num_neurons (list of integer): each integer is width of TSD model corresponding
-    feature_vector_input_length: size of one example (=400)
+    feature_vector_input_length: size of one example (=252)
     path_weights: where to load weights from
     save_path: where to save results
     algo_name: where to save results
@@ -244,9 +243,9 @@ def test_TSD_DNN_on_training_sessions(examples_datasets_train, labels_datasets_t
                     # print("   one batch ", output.shape)
             print("Participant: ", participant_index, " Accuracy: ",
                 np.mean(np.array(predictions_training_session) == np.array(ground_truth_training_sesssion)))
-            predictions_participant.extend(predictions_training_session)
-            model_outputs_participant.extend(model_outputs_session)
-            ground_truth_participant.extend(ground_truth_training_sesssion)
+            predictions_participant.append(predictions_training_session)
+            model_outputs_participant.append(model_outputs_session)
+            ground_truth_participant.append(ground_truth_training_sesssion)
             accuracies_participant.append(np.mean(np.array(predictions_training_session) ==
                                                 np.array(ground_truth_training_sesssion)))
             # print("ground truth ", np.shape(ground_truth_training_sesssion))
@@ -259,7 +258,7 @@ def test_TSD_DNN_on_training_sessions(examples_datasets_train, labels_datasets_t
         print("ACCURACY PARTICIPANT ", participant_index, ": ", accuracies_participant)
 
     accuracies_to_display = []
-    for accuracies_from_participant in np.array(accuracies).flatten():
+    for accuracies_from_participant in np.array(accuracies):
         accuracies_to_display.append(accuracies_from_participant)
     print(accuracies_to_display)
     print("OVERALL ACCURACY: " + str(np.mean(accuracies_to_display)))
@@ -267,13 +266,13 @@ def test_TSD_DNN_on_training_sessions(examples_datasets_train, labels_datasets_t
     filter_size = num_neurons
     if use_only_first_training:
         file_to_open = save_path + '/' + algo_name + "_no_retraining.txt"
-        np.save(save_path + "/predictions_" + algo_name + "_no_retraining", np.array((np.array(accuracies_to_display), 
+        np.save(save_path + "/predictions_" + algo_name + "_no_retraining", np.array((accuracies_to_display, 
                                                                             ground_truths, 
                                                                             predictions, 
                                                                             model_outputs), dtype=object))
     else:
         file_to_open = save_path + '/' + algo_name + "_WITH_RETRAINING_" + str(filter_size[1]) + ".txt"
-        np.save(save_path + "/predictions_" + algo_name + "_no_retraining", np.array((np.array(accuracies_to_display), 
+        np.save(save_path + "/predictions_" + algo_name + "_no_retraining", np.array((accuracies_to_display, 
                                                                             ground_truths, 
                                                                             predictions, 
                                                                             model_outputs), dtype=object))
