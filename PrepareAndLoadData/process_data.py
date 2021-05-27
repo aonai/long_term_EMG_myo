@@ -26,9 +26,6 @@ fs = 200
 ch_num = 8
 trial_num = 4
 
-fs_pass = 15
-fil_order = 5
-
 win_size = 50            # 250ms window
 win_inc = 10             # 50ms overlap
 
@@ -132,6 +129,9 @@ def getTSD(all_channels_data_in_window):
 
     Note: this uses window emg directly instead of extracting a window then apply TSD like in Rami's code. Calculation
     is mainly based on equations explained in [3].
+
+    Note2: it looks like the window size needs to be at least 28 to have this functions working; otherwise, the calcualted 
+            features will not be able to fill up all the combinations 
     
     %Implementation from Rami Khusaba adapted to our code
     % References
@@ -152,6 +152,7 @@ def getTSD(all_channels_data_in_window):
 
     datasize = all_channels_data_in_window.shape[0]
     Nsignals = all_channels_data_in_window.shape[1]
+    # print("all_channels_data_in_window  = ", all_channels_data_in_window.shape)
 
     # prepare indices of each 2 channels combinations
     # NCC = Number of channels to combine
@@ -175,6 +176,8 @@ def getTSD(all_channels_data_in_window):
     # Step 1.2: Correlation analysis
     num = np.multiply(efp, ebp)
     den = np.sqrt(np.multiply(efp, efp)) + np.sqrt(np.multiply(ebp, ebp))
+    # print("num = ", np.shape(num))
+    # print("put into feat = ", np.shape(range(Indx.shape[0] * NFPC)))
     feat[range(Indx.shape[0] * NFPC)] = num / den
 
     # Step2.1: Extract within-channels features
@@ -256,7 +259,8 @@ def read_files_to_format_training_session(path_folder_examples, day_num,
 
     return examples_training, labels_training
 
-def get_data_and_process_it_from_file(path, number_of_gestures=22, number_of_cycles=4, window_size=50, size_non_overlap=10):
+def get_data_and_process_it_from_file(path, number_of_gestures=22, number_of_cycles=4, window_size=50, 
+                                        size_non_overlap=10, num_participant=5):
 
     """
     Args:
@@ -272,7 +276,7 @@ def get_data_and_process_it_from_file(path, number_of_gestures=22, number_of_cyc
     examples_training_sessions_datasets, labels_training_sessions_datasets = [], []
 
     # load one participant for now
-    for index_participant in range(1,4):
+    for index_participant in range(1,1+num_participant):
         # load one participant data 
         folder_participant = "sub" + str(index_participant)
         examples_participant_training_sessions, labels_participant_training_sessions = [], []
@@ -313,7 +317,8 @@ def get_data_and_process_it_from_file(path, number_of_gestures=22, number_of_cyc
     return dataset_dictionnary
 
 
-def read_data_training(path, store_path, number_of_gestures=22, number_of_cycles=4, window_size=50, size_non_overlap=10):
+def read_data_training(path, store_path, number_of_gestures=22, number_of_cycles=4, window_size=50, 
+                        size_non_overlap=10, num_participant=5):
     """
     path: path to load training data
     store_path: path to stored loaded data dictionary
@@ -322,11 +327,12 @@ def read_data_training(path, store_path, number_of_gestures=22, number_of_cycles
     number_of_cycles: number of trials recorded for each motion
     window_size: analysis window size
     size_non_overlap: length of non-overlap portion between each analysis window
+    num_participant: number of participant dataset to load
     """
     print("Loading and preparing Training datasets...")
     dataset_dictionnary = get_data_and_process_it_from_file(path=path, number_of_gestures=number_of_gestures,
                                                             number_of_cycles=number_of_cycles, window_size=window_size,
-                                                            size_non_overlap=size_non_overlap)
+                                                            size_non_overlap=size_non_overlap, num_participant=num_participant)
 
     # store dictionary to pickle
     training_session_dataset_dictionnary = {}

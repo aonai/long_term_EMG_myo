@@ -1,7 +1,6 @@
-import os, sys
+import os
 import time
 import copy
-import pickle
 import numpy as np
 
 import torch
@@ -208,25 +207,25 @@ def DANN_Training(gesture_classifier, crossEntropyLoss, optimizer_classifier, tr
     return best_state
 
 
-def train_DANN(examples_datasets_train, labels_datasets_train, num_kernels, filter_size=(4, 10),
+def train_DANN(examples_datasets_train, labels_datasets_train, num_kernels, 
                           path_weights_to_save_to="Weights_TSD/DANN", batch_size=512, patience_increment=10,
                           path_weights_fine_tuning="Weights_TSD/TSD",
-                          number_of_cycle_for_first_training=4, number_of_cycles_rest_of_training=4,
+                          number_of_cycle_for_first_training=40, number_of_cycles_rest_of_training=40,
                           number_of_classes=22, 
                           feature_vector_input_length=252, learning_rate=0.002515):
     """
     examples_datasets_train
     labels_datasets_train
     num_kernels
-    filter_size
     path_weights_to_save_to: path to save DANN weights
     batch_size
-    patience_increment
+    patience_increment: number of epchos to wait after no best loss is found and before existing training 
     path_weights_fine_tuning: path to load normal TSD_DNN weights 
     number_of_cycle_for_first_training
     number_of_cycles_rest_of_training
     number_of_classes
-    spectrogram_model
+    feature_vector_input_length
+    learning_rate
     """
     participants_train, participants_validation, participants_test = load_dataloaders_training_sessions(
         examples_datasets_train, labels_datasets_train, batch_size=batch_size,
@@ -271,7 +270,18 @@ def train_DANN(examples_datasets_train, labels_datasets_train, num_kernels, filt
 def test_DANN_on_training_sessions(examples_datasets_train, labels_datasets_train, num_neurons, feature_vector_input_length,
                               path_weights_normal='/Weights_TSD/TSD', path_weights_DA='/Weights_TSD/DANN', algo_name="DANN",
                               save_path='results_tsd', cycle_for_test=None, number_of_classes=22):
-
+    """
+    examples_datasets_train
+    labels_datasets_train
+    num_neurons (list of integer): each integer is width of TSD model corresponding
+    feature_vector_input_length: size of one example (=252)
+    path_weights_normal: where to load standard training weights from
+    path_weights_DA: where to save DANN weights 
+    save_path: where to save results
+    algo_name: where to save results
+    cycle_for_test: which session to use for testing
+    number_of_classes
+    """
     _, _, participants_test = load_dataloaders_training_sessions(examples_datasets_train, labels_datasets_train,
                                                                  batch_size=128*3, cycle_for_test=cycle_for_test)
     model_outputs = []

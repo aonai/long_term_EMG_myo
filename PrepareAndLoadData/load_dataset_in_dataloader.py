@@ -70,10 +70,11 @@ def get_dataloader(examples_datasets, labels_datasets, number_of_cycle_for_first
                 # Shuffle X and Y and separate them in a train and validation set.
                 X, X_valid, Y, Y_valid = train_test_split(X_associated_with_training_i, Y_associated_with_training_i,
                                                           test_size=validation_set_ratio, shuffle=True)
+                print("       one group XY train", np.shape(X), "  ",  np.shape(Y))
+                print("       one group XY valid", np.shape(X_valid), "  ",  np.shape(X_valid))
             else:
                 X, Y = X_associated_with_training_i, Y_associated_with_training_i
-            print("       one group XY train", np.shape(X), "  ",  np.shape(Y))
-            print("       one group XY valid", np.shape(X_valid), "  ",  np.shape(X_valid))
+                print("       one group XY train", np.shape(X), "  ",  np.shape(Y))
             
             # trainning dataloader
             train = TensorDataset(torch.from_numpy(np.array(X, dtype=np.float32)),
