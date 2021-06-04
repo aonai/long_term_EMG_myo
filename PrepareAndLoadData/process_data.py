@@ -260,7 +260,7 @@ def read_files_to_format_training_session(path_folder_examples, day_num,
     return examples_training, labels_training
 
 def get_data_and_process_it_from_file(path, number_of_gestures=22, number_of_cycles=4, window_size=50, 
-                                        size_non_overlap=10, num_participant=5):
+                                        size_non_overlap=10, num_participant=5, across_subjects = False):
 
     """
     Args:
@@ -269,6 +269,8 @@ def get_data_and_process_it_from_file(path, number_of_gestures=22, number_of_cyc
         number_of_cycles: number of trials recorded for each motion
         window_size: analysis window size
         size_non_overlap: length of non-overlap portion between each analysis window
+        num_participant
+        across_subjects
 
     Returns:
         loaded data dictionary containing `examples_training` and `labels_training`
@@ -302,23 +304,32 @@ def get_data_and_process_it_from_file(path, number_of_gestures=22, number_of_cyc
 
 
         # participants_num x sessions_num(3) x days_per_session(10)*trail_per_day(4) x #examples_window*#mov(26*22=572) x window_size x channel_num
-        print('traning examples ', np.shape(examples_participant_training_sessions))
-        examples_training_sessions_datasets.append(examples_participant_training_sessions)
-        print('all traning examples ', np.shape(examples_training_sessions_datasets))
-
         # participants_num x sessions_num(3) x days_per_session(10)*trail_per_day(4) x #examples_window*#mov(26*22=572)
+        
+        print('traning examples ', np.shape(examples_participant_training_sessions))
         print('traning labels ', np.shape(labels_participant_training_sessions))
-        labels_training_sessions_datasets.append(labels_participant_training_sessions)
+        if not across_subjects or not examples_training_sessions_datasets:
+            examples_training_sessions_datasets.append(examples_participant_training_sessions)
+            labels_training_sessions_datasets.append(labels_participant_training_sessions)
+        else:
+            # participants_num(1) x sessions_num(3) x days_per_session(10)*trail_per_day(4*num_participant) x #examples_window*#mov(26*22=572) x window_size x channel_num
+            # participants_num(1) x sessions_num(3) x days_per_session(10)*trail_per_day(4*num_participant) x #examples_window*#mov(26*22=572)
+            for session_idx in range(3):
+                examples_training_sessions_datasets[0][session_idx].extend(examples_participant_training_sessions[session_idx])
+                labels_training_sessions_datasets[0][session_idx].extend(labels_participant_training_sessions[session_idx])
+            
+            
+        print('all traning examples ', np.shape(examples_training_sessions_datasets))
         print('all traning labels ', np.shape(labels_training_sessions_datasets))
+
     
     # store processed data to dictionary
     dataset_dictionnary = {"examples_training": np.array(examples_training_sessions_datasets, dtype=object),
                         "labels_training": np.array(labels_training_sessions_datasets, dtype=object)}
     return dataset_dictionnary
 
-
 def read_data_training(path, store_path, number_of_gestures=22, number_of_cycles=4, window_size=50, 
-                        size_non_overlap=10, num_participant=5):
+                        size_non_overlap=10, num_participant=5, across_subjects = False):
     """
     path: path to load training data
     store_path: path to stored loaded data dictionary
@@ -332,7 +343,9 @@ def read_data_training(path, store_path, number_of_gestures=22, number_of_cycles
     print("Loading and preparing Training datasets...")
     dataset_dictionnary = get_data_and_process_it_from_file(path=path, number_of_gestures=number_of_gestures,
                                                             number_of_cycles=number_of_cycles, window_size=window_size,
-                                                            size_non_overlap=size_non_overlap, num_participant=num_participant)
+                                                            size_non_overlap=size_non_overlap, 
+                                                            num_participant=num_participant,
+                                                            across_subjects = across_subjects)
 
     # store dictionary to pickle
     training_session_dataset_dictionnary = {}

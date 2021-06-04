@@ -230,7 +230,7 @@ def run_SCADANN_training_sessions(examples_datasets, labels_datasets, num_kernel
                                   path_weights_to_save_to="Weights_TSD/SCADANN",
                                   path_weights_Adversarial_training="Weights_TSD/DANN",
                                   path_weights_Normal_training="Weights_TSD/TSD",
-                                  number_of_cycle_for_first_training=40, number_of_cycles_rest_of_training=40,
+                                  number_of_cycles_total=40,
                                   number_of_classes=22, 
                                   percentage_same_gesture_stable=0.75,
                                   learning_rate=0.002515):
@@ -250,8 +250,8 @@ def run_SCADANN_training_sessions(examples_datasets, labels_datasets, num_kernel
     """
     participants_train, _, _ = load_dataloaders_training_sessions(
         examples_datasets, labels_datasets, batch_size=128,
-        number_of_cycle_for_first_training=number_of_cycle_for_first_training,
-        number_of_cycles_rest_of_training=number_of_cycles_rest_of_training, drop_last=False, get_validation_set=False,
+        number_of_cycles_total=number_of_cycles_total,
+        drop_last=False, get_validation_set=False,
         shuffle=False)
     print("participants_train = ", len(participants_train))
     for participant_i in range(len(participants_train)):
@@ -319,9 +319,10 @@ def run_SCADANN_training_sessions(examples_datasets, labels_datasets, num_kernel
 def test_network_SLADANN(examples_datasets_train, labels_datasets_train, num_neurons, feature_vector_input_length,
                          path_weights_SCADANN ="Weights_TSD/SCADANN",
                          path_weights_normal="Weights_TSD/TSD",
-                         algo_name="SCADANN", cycle_test=None, 
+                         algo_name="SCADANN", cycle_test=None, number_of_cycles_total=40,
                          number_of_classes=22, save_path = 'results_tsd'):
-    _, _, participants_test = load_dataloaders_training_sessions(examples_datasets_train, labels_datasets_train,
+    _, _, participants_test = load_dataloaders_training_sessions(examples_datasets_train, labels_datasets_train, 
+                                                                number_of_cycles_total=number_of_cycles_total,
                                                                  batch_size=512, cycle_for_test=cycle_test)
 
     model_outputs = []

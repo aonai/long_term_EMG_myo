@@ -8,7 +8,7 @@ from torch.utils.data import TensorDataset
 def get_dataloader(examples_datasets, labels_datasets, number_of_cycle_for_first_training=40,
                    number_of_cycles_rest_of_training=40, batch_size=128,
                    drop_last=True, shuffle=True,
-                   number_of_cycles_total=4, validation_set_ratio=0.1, get_validation_set=True, cycle_for_test=None):
+                   number_of_cycles_total=40, validation_set_ratio=0.1, get_validation_set=True, cycle_for_test=None):
     """
     Args:
         examples_datasets
@@ -111,6 +111,7 @@ def get_dataloader(examples_datasets, labels_datasets, number_of_cycle_for_first
 
 def load_dataloaders_training_sessions(examples_datasets_train, labels_datasets_train,
                                        number_of_cycle_for_first_training=40, number_of_cycles_rest_of_training=40,
+                                       number_of_cycles_total = 40, 
                                        batch_size=128, drop_last=True, shuffle=True, get_validation_set=True,
                                        cycle_for_test=None):
     """
@@ -131,6 +132,7 @@ def load_dataloaders_training_sessions(examples_datasets_train, labels_datasets_
     train, validation, test = get_dataloader(examples_datasets_train, labels_datasets_train,
                                              number_of_cycle_for_first_training=number_of_cycle_for_first_training,
                                              number_of_cycles_rest_of_training=number_of_cycles_rest_of_training, 
+                                             number_of_cycles_total = number_of_cycles_total, 
                                              batch_size=batch_size,
                                              drop_last=drop_last, shuffle=shuffle,
                                              get_validation_set=get_validation_set,

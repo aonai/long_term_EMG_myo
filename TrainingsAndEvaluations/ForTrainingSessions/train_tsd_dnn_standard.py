@@ -113,9 +113,9 @@ def load_checkpoint(model, filename, optimizer=None, scheduler=None, strict=True
     return model, optimizer, scheduler, start_epoch
 
 def train_fine_tuning(examples_datasets_train, labels_datasets_train, num_kernels,
-                                  number_of_cycle_for_first_training=40, number_of_cycles_rest_of_training=40,
-                                  path_weight_to_save_to="Weights_TSD/unknown", number_of_classes=22, batch_size=128,
-                                  feature_vector_input_length=252, learning_rate=0.002515):
+                    number_of_cycles_total=40, 
+                    path_weight_to_save_to="Weights_TSD/unknown", number_of_classes=22, batch_size=128,
+                    feature_vector_input_length=252, learning_rate=0.002515):
     """
     examples_datasets_train
     labels_datasets_train
@@ -130,8 +130,7 @@ def train_fine_tuning(examples_datasets_train, labels_datasets_train, num_kernel
     """ 
     participants_train, participants_validation, _ = load_dataloaders_training_sessions(
         examples_datasets_train, labels_datasets_train, batch_size=batch_size,
-        number_of_cycle_for_first_training=number_of_cycle_for_first_training,
-        number_of_cycles_rest_of_training=number_of_cycles_rest_of_training)
+        number_of_cycles_total=number_of_cycles_total)
 
     print("START TRAINING")
     for participant_i in range(len(participants_train)):
@@ -178,7 +177,7 @@ def train_fine_tuning(examples_datasets_train, labels_datasets_train, num_kernel
 def test_TSD_DNN_on_training_sessions(examples_datasets_train, labels_datasets_train, num_neurons,
                                       feature_vector_input_length=252,
                                       path_weights='/Weights_TSD', save_path='results_tsd', algo_name="Normal_Training",
-                                      use_only_first_training=False, cycle_for_test=None,
+                                      use_only_first_training=False, cycle_for_test=None, number_of_cycles_total=40,
                                       number_of_classes=22):
     """
     examples_datasets_train
@@ -194,6 +193,7 @@ def test_TSD_DNN_on_training_sessions(examples_datasets_train, labels_datasets_t
     cycle_for_test: which session to use for testing
     """
     _, _, participants_test = load_dataloaders_training_sessions(examples_datasets_train, labels_datasets_train,
+                                                                number_of_cycles_total=number_of_cycles_total,
                                                                  batch_size=128*3, cycle_for_test=cycle_for_test)
     model_outputs = []
     predictions = []
