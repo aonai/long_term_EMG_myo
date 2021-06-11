@@ -319,7 +319,7 @@ def test_network_SLADANN(examples_datasets_train, labels_datasets_train, num_neu
                          path_weights_SCADANN ="Weights_TSD/SCADANN",
                          path_weights_normal="Weights_TSD/TSD",
                          algo_name="SCADANN", cycle_test=None, number_of_cycles_total=40,
-                         number_of_classes=22, save_path = 'results_tsd'):
+                         number_of_classes=22, save_path = 'results_tsd', across_sub=False):
     """
     Test trained model. Stores a txt and npy files that include predictions, ground truths, accuracy table, and 
     overall accuracies.
@@ -354,15 +354,19 @@ def test_network_SLADANN(examples_datasets_train, labels_datasets_train, num_neu
         model = TSD_Network(number_of_class=number_of_classes, num_neurons=num_neurons,
                             feature_vector_input_length=feature_vector_input_length)
         for session_index, training_session_test_data in enumerate(dataset_test):
-
-            if session_index == 0:
-                best_state = torch.load(
-                    path_weights_normal + "/participant_%d/best_state_%d.pt" %
-                    (participant_index, 0))
-            else:
+            if across_sub:          
                 best_state = torch.load(
                     path_weights_SCADANN + "/participant_%d/best_state_%d.pt" %
-                    (participant_index, session_index))
+                    (0, 1))
+            else:
+                if session_index == 0:
+                    best_state = torch.load(
+                        path_weights_normal + "/participant_%d/best_state_%d.pt" %
+                        (participant_index, 0))
+                else:
+                    best_state = torch.load(
+                        path_weights_SCADANN + "/participant_%d/best_state_%d.pt" %
+                        (participant_index, session_index))
             best_weights = best_state['state_dict']
             model.load_state_dict(best_weights)
 

@@ -8,8 +8,6 @@ def segment_dataset_by_gesture_to_remove_transitions(ground_truths, predictions,
     """
     Segment data based on where ground truth starts transit into another label. All data in type numpy
     
-    ?: looks like this is trained based on known dataset; might be different if groud truth is unknown
-    
     Args:
         ground_truths: training dataset label
         predictions: output from model

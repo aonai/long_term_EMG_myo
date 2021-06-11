@@ -262,7 +262,8 @@ def train_DANN(examples_datasets_train, labels_datasets_train, num_kernels,
 
 def test_DANN_on_training_sessions(examples_datasets_train, labels_datasets_train, num_neurons, feature_vector_input_length,
                               path_weights_normal='/Weights/TSD', path_weights_DA='/Weights/DANN', algo_name="DANN",
-                              save_path='results', number_of_cycles_total=40, cycle_for_test=None, number_of_classes=22):
+                              save_path='results', number_of_cycles_total=40, cycle_for_test=None, number_of_classes=22,
+                              across_sub=False):
     """
     Test trained model. Stores a txt and npy files that include predictions, ground truths, accuracy table, and 
     overall accuracies.
@@ -297,14 +298,19 @@ def test_DANN_on_training_sessions(examples_datasets_train, labels_datasets_trai
                             num_neurons=num_neurons)
         print(np.shape(dataset_test))
         for session_index, training_session_test_data in enumerate(dataset_test):
-            if session_index == 0:
-                best_state = torch.load(
-                    path_weights_normal + "/participant_%d/best_state_%d.pt" %
-                    (participant_index, 0))
-            else:
+            if across_sub:
                 best_state = torch.load(
                     path_weights_DA + "/participant_%d/best_state_%d.pt" %
-                    (participant_index, session_index))  # There is 2 evaluation sessions per training
+                    (0, 1))
+            else:
+                if session_index == 0:
+                    best_state = torch.load(
+                        path_weights_normal + "/participant_%d/best_state_%d.pt" %
+                        (participant_index, 0))
+                else:
+                    best_state = torch.load(
+                        path_weights_DA + "/participant_%d/best_state_%d.pt" %
+                        (participant_index, session_index))  # There is 2 evaluation sessions per training
             best_weights = best_state['state_dict']
             model.load_state_dict(best_weights)
 

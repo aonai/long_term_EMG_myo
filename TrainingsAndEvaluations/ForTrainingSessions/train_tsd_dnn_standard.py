@@ -184,7 +184,7 @@ def test_TSD_DNN_on_training_sessions(examples_datasets_train, labels_datasets_t
                                       feature_vector_input_length=252,
                                       path_weights='/Weights', save_path='results', algo_name="Normal_Training",
                                       use_only_first_training=False, cycle_for_test=None, number_of_cycles_total=40,
-                                      number_of_classes=22):
+                                      number_of_classes=22, across_sub=False):
     """
     Test trained model. Stores a txt and npy files that include predictions, ground truths, accuracy table, and 
     overall accuracies. 
@@ -224,14 +224,19 @@ def test_TSD_DNN_on_training_sessions(examples_datasets_train, labels_datasets_t
         # start test
         for session_index, training_session_test_data in enumerate(dataset_test):
             print(session_index, " SESSION   data = ", len(training_session_test_data.dataset))
-            if use_only_first_training:
+            if across_sub:
                 best_state = torch.load(
                     path_weights + "/participant_%d/best_state_%d.pt" %
-                    (participant_index, 0))
+                    (0, 0))
             else:
-                best_state = torch.load(
-                    path_weights + "/participant_%d/best_state_%d.pt" %
-                    (participant_index, session_index))
+                if use_only_first_training:
+                    best_state = torch.load(
+                        path_weights + "/participant_%d/best_state_%d.pt" %
+                        (participant_index, 0))
+                else:
+                    best_state = torch.load(
+                        path_weights + "/participant_%d/best_state_%d.pt" %
+                        (participant_index, session_index))
             best_weights = best_state['state_dict']
             
             # load trained model

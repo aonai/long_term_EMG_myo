@@ -15,9 +15,9 @@ pos_label = [1, 2, 3, 1, 2, 2, 3, 3, 1, 1,
             3, 1, 1, 3, 3, 2, 2, 2, 1, 3,
             3, 2, 3, 2, 2, 1, 1, 2, 1, 3] # N: 1, I: 2, O: 3
 # days correspond to N, I, and O positions
-sessions_idx = [[],[],[]]
+index_of_sessions = [[],[],[]]
 for idx, pl in enumerate(pos_label):
-    sessions_idx[pl-1].append(idx+1)
+    index_of_sessions[pl-1].append(idx+1)
 
 day_num = 30
 sub_num = 5
@@ -266,7 +266,8 @@ def read_files_to_format_training_session(path_folder_examples, day_num,
     return examples_training, labels_training
 
 def get_data_and_process_it_from_file(path, number_of_gestures=22, number_of_cycles=4, window_size=50, 
-                                        size_non_overlap=10, num_participant=5, sessions_to_include = [0,1,2]):
+                                        size_non_overlap=10, num_participant=5, sessions_to_include = [0,1,2], 
+                                        witch=False):
     
     """
     Wrapper for loading data from desired folders. 
@@ -279,6 +280,8 @@ def get_data_and_process_it_from_file(path, number_of_gestures=22, number_of_cyc
         size_non_overlap: length of non-overlap portion between each analysis window
         num_participant: numer of participants to include; should be integer between 1~5
         sessions_to_include: array of integers defining which session to include
+        swtich: whether to switch returned data from participants_num x sessions_num(3) 
+                to sessions_num(3) x participants_num; switching is for training dataset acrross participants
 
     Returns:
         data dictionary containing an array of `examples_training` and `labels_training`
@@ -286,41 +289,81 @@ def get_data_and_process_it_from_file(path, number_of_gestures=22, number_of_cyc
     examples_training_sessions_datasets, labels_training_sessions_datasets = [], []
 
     # load one participant for now
-    for index_participant in range(1,1+num_participant):
-        # load one participant data 
-        folder_participant = "sub" + str(index_participant)
-        examples_participant_training_sessions, labels_participant_training_sessions = [], []
-        for session_idx, days_of_current_session in enumerate(sessions_idx):
-            if session_idx in sessions_to_include:
-                print("session ", session_idx, " --- process data in days ", days_of_current_session)
-                examples_per_session, labels_per_session = [], []
-                for day_num in days_of_current_session:
-                    path_folder_examples = path + "/" + folder_participant + "/day" + str(day_num)
-                    # print("current dr = ", day_num)
+    if switch:
+        for session_idx in sessions_to_include:
+            # load one participant data 
+            examples_participant_training_sessions, labels_participant_training_sessions = [], []
+            for index_participant in range(1,1+num_participant):
+                folder_participant = "sub" + str(index_participant)
+                days_of_current_session = index_of_sessions[session_idx]
+                if session_idx in sessions_to_include:
+                    print("session ", session_idx, " --- process data in days ", days_of_current_session)
+                    examples_per_session, labels_per_session = [], []
+                    for day_num in days_of_current_session:
+                        path_folder_examples = path + "/" + folder_participant + "/day" + str(day_num)
+                        # print("current dr = ", day_num)
+                        
+                        examples_training, labels_training  = \
+                            read_files_to_format_training_session(path_folder_examples=path_folder_examples,
+                                                                day_num = day_num,
+                                                                number_of_cycles=number_of_cycles,
+                                                                number_of_gestures=number_of_gestures,
+                                                                window_size=window_size,
+                                                                size_non_overlap=size_non_overlap)
+                        examples_per_session.extend(examples_training)
+                        labels_per_session.extend(labels_training)
+                    examples_participant_training_sessions.append(examples_per_session)
+                    labels_participant_training_sessions.append(labels_per_session)
+                    print("@ traning sessions = ", np.shape(examples_participant_training_sessions))
+
+            print('traning examples ', np.shape(examples_participant_training_sessions))
+            print('traning labels ', np.shape(labels_participant_training_sessions))  
                     
-                    examples_training, labels_training  = \
-                        read_files_to_format_training_session(path_folder_examples=path_folder_examples,
-                                                            day_num = day_num,
-                                                            number_of_cycles=number_of_cycles,
-                                                            number_of_gestures=number_of_gestures,
-                                                            window_size=window_size,
-                                                            size_non_overlap=size_non_overlap)
-                    examples_per_session.extend(examples_training)
-                    labels_per_session.extend(labels_training)
-                examples_participant_training_sessions.append(examples_per_session)
-                labels_participant_training_sessions.append(labels_per_session)
-                print("@ traning sessions = ", np.shape(examples_participant_training_sessions))
+            examples_training_sessions_datasets.append(examples_participant_training_sessions)
+            labels_training_sessions_datasets.append(labels_participant_training_sessions)
 
+            # sessions_num(3) x participants_num x days_per_session(10)*trail_per_day(4*num_participant) x #examples_window*#mov(26*22=572) x window_size x channel_num
+            # sessions_num(3) x participants_num x days_per_session(10)*trail_per_day(4*num_participant) x #examples_window*#mov(26*22=572)
+            print('all traning examples ', np.shape(examples_training_sessions_datasets))
+            print('all traning labels ', np.shape(labels_training_sessions_datasets))
 
-        # participants_num x sessions_num(3) x days_per_session(10)*trail_per_day(4) x #examples_window*#mov(26*22=572) x window_size x channel_num
-        # participants_num x sessions_num(3) x days_per_session(10)*trail_per_day(4) x #examples_window*#mov(26*22=572)
-        print('traning examples ', np.shape(examples_participant_training_sessions))
-        print('traning labels ', np.shape(labels_participant_training_sessions))
-        examples_training_sessions_datasets.append(examples_participant_training_sessions)
-        labels_training_sessions_datasets.append(labels_participant_training_sessions)
+    else:
+        for index_participant in range(1,1+num_participant):
+            # load one participant data 
+            folder_participant = "sub" + str(index_participant)
+            examples_participant_training_sessions, labels_participant_training_sessions = [], []
+            for session_idx in sessions_to_include:
+                days_of_current_session = index_of_sessions[session_idx]
+                if session_idx in sessions_to_include:
+                    print("session ", session_idx, " --- process data in days ", days_of_current_session)
+                    examples_per_session, labels_per_session = [], []
+                    for day_num in days_of_current_session:
+                        path_folder_examples = path + "/" + folder_participant + "/day" + str(day_num)
+                        # print("current dr = ", day_num)
+                        
+                        examples_training, labels_training  = \
+                            read_files_to_format_training_session(path_folder_examples=path_folder_examples,
+                                                                day_num = day_num,
+                                                                number_of_cycles=number_of_cycles,
+                                                                number_of_gestures=number_of_gestures,
+                                                                window_size=window_size,
+                                                                size_non_overlap=size_non_overlap)
+                        examples_per_session.extend(examples_training)
+                        labels_per_session.extend(labels_training)
+                    examples_participant_training_sessions.append(examples_per_session)
+                    labels_participant_training_sessions.append(labels_per_session)
+                    print("@ traning sessions = ", np.shape(examples_participant_training_sessions))
+
+            print('traning examples ', np.shape(examples_participant_training_sessions))
+            print('traning labels ', np.shape(labels_participant_training_sessions))  
+                    
+            examples_training_sessions_datasets.append(examples_participant_training_sessions)
+            labels_training_sessions_datasets.append(labels_participant_training_sessions)
             
-        print('all traning examples ', np.shape(examples_training_sessions_datasets))
-        print('all traning labels ', np.shape(labels_training_sessions_datasets))
+            # participants_num x sessions_num(3) x days_per_session(10)*trail_per_day(4*num_participant) x #examples_window*#mov(26*22=572) x window_size x channel_num
+            # participants_num x sessions_num(3) x days_per_session(10)*trail_per_day(4*num_participant) x #examples_window*#mov(26*22=572)
+            print('all traning examples ', np.shape(examples_training_sessions_datasets))
+            print('all traning labels ', np.shape(labels_training_sessions_datasets))
 
     
     # store processed data to dictionary
@@ -329,7 +372,8 @@ def get_data_and_process_it_from_file(path, number_of_gestures=22, number_of_cyc
     return dataset_dictionnary
 
 def read_data_training(path, store_path, number_of_gestures=22, number_of_cycles=4, window_size=50, 
-                        size_non_overlap=10, num_participant=5, sessions_to_include=[0,1,2]):
+                        size_non_overlap=10, num_participant=5, sessions_to_include=[0,1,2], 
+                        switch=False):
     """
     Wrapper for reading and processing raw data. A npy file containing a dirctory for processed data is stored.
     This directory has key `examples_training` that stores windows of processed emg signal and key `labels_training` 
@@ -354,7 +398,8 @@ def read_data_training(path, store_path, number_of_gestures=22, number_of_cycles
                                                             number_of_cycles=number_of_cycles, window_size=window_size,
                                                             size_non_overlap=size_non_overlap, 
                                                             num_participant=num_participant,
-                                                            sessions_to_include = sessions_to_include)
+                                                            sessions_to_include = sessions_to_include, 
+                                                            switch=switch)
 
     # store dictionary to pickle
     training_session_dataset_dictionnary = {}
