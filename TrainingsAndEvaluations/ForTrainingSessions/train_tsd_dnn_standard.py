@@ -12,6 +12,9 @@ from PrepareAndLoadData.load_dataset_in_dataloader import load_dataloaders_train
 
 def train_model_standard(model, criterion, optimizer, scheduler, dataloaders, num_epochs=500, precision=1e-8,
                          patience=10, patience_increase=10):
+    """
+    Return best_state, or weights of trained model
+    """
     since = time.time()
 
     best_loss = float('inf')
@@ -114,19 +117,22 @@ def load_checkpoint(model, filename, optimizer=None, scheduler=None, strict=True
 
 def train_fine_tuning(examples_datasets_train, labels_datasets_train, num_kernels,
                     number_of_cycles_total=40, 
-                    path_weight_to_save_to="Weights_TSD/unknown", number_of_classes=22, batch_size=128,
+                    path_weight_to_save_to="Weights/unknown", number_of_classes=22, batch_size=128,
                     feature_vector_input_length=252, learning_rate=0.002515):
     """
-    examples_datasets_train
-    labels_datasets_train
-    num_kernels (list of integer): each integer is width of TSD model corresponding
-    number_of_cycle_for_first_training:  number of total trails for the first training session
-    number_of_cycles_rest_of_training:  number of total trails for the rest
-    path_weight_to_save_to
-    number_of_classes
-    batch_size
-    feature_vector_input_length: length of one example data (252)
-    learning_rate
+    Train model using the first session, then fine tune using the others. 
+
+    Args:
+        examples_datasets: ndarray of input examples
+        labels_datasets: ndarray of labels for each example
+        num_kernels (list of integer): each integer is width of TSD linear block of corresponding layer 
+        number_of_cycle_for_first_training:  number of total trails for the first training session
+        number_of_cycles_rest_of_training:  number of total trails for the rest
+        path_weight_to_save_to: where to save trained model
+        number_of_classes: number of classes to train
+        batch_size:  size of one batch in dataloader
+        feature_vector_input_length: length of one example data (252)
+        learning_rate
     """ 
     participants_train, participants_validation, _ = load_dataloaders_training_sessions(
         examples_datasets_train, labels_datasets_train, batch_size=batch_size,
@@ -176,21 +182,27 @@ def train_fine_tuning(examples_datasets_train, labels_datasets_train, num_kernel
 
 def test_TSD_DNN_on_training_sessions(examples_datasets_train, labels_datasets_train, num_neurons,
                                       feature_vector_input_length=252,
-                                      path_weights='/Weights_TSD', save_path='results_tsd', algo_name="Normal_Training",
+                                      path_weights='/Weights', save_path='results', algo_name="Normal_Training",
                                       use_only_first_training=False, cycle_for_test=None, number_of_cycles_total=40,
                                       number_of_classes=22):
     """
-    examples_datasets_train
-    labels_datasets_train
-    num_neurons (list of integer): each integer is width of TSD model corresponding
-    feature_vector_input_length: size of one example (=252)
-    path_weights: where to load weights from
-    save_path: where to save results
-    algo_name: where to save results
-    use_only_first_training: 
-        load weights from first trainning session only if True; 
-        otherwise use fine tunning weights (trained from all four sessions)
-    cycle_for_test: which session to use for testing
+    Test trained model. Stores a txt and npy files that include predictions, ground truths, accuracy table, and 
+    overall accuracies. 
+
+    Args: 
+        examples_datasets: ndarray of input examples
+        labels_datasets: ndarray of labels for each example
+        num_neurons (list of integer): each integer is width of TSD linear block of corresponding layer 
+        path_weights: where to load trained model
+        save_path: where to save test results
+        algo_name: nickname of model (this will be included in file name of test results)
+        use_only_first_training: 
+            load weights from first trainning session only if True; 
+            otherwise use fine tunning weights (trained from all four sessions)
+        cycle_for_test: which session to use for testing
+        number_of_cycles_total: total number of trails in one session
+        number_of_classes: number of classes to train
+
     """
     _, _, participants_test = load_dataloaders_training_sessions(examples_datasets_train, labels_datasets_train,
                                                                 number_of_cycles_total=number_of_cycles_total,

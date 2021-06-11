@@ -10,14 +10,18 @@ def get_dataloader(examples_datasets, labels_datasets, number_of_cycle_for_first
                    drop_last=True, shuffle=True,
                    number_of_cycles_total=40, validation_set_ratio=0.1, get_validation_set=True, cycle_for_test=None):
     """
+    Put examples and labels into an array of datalaoders (train, valid, and test)
+    Test dataloader only include data whose trail numbers are 4n
+
     Args:
-        examples_datasets
-        labels_datasets
+        examples_datasets: ndarray of input examples
+        labels_datasets: ndarray of labels for each example
         number_of_cycle_for_first_training:  number of total trails for the first training session
         number_of_cycles_rest_of_training:  number of total trails for the rest
         batch_size: size of one batch in dataloader
         drop_last: whether to drop data when last set of data < batch_size (only used for train dataloader)
         shuffle: whether to shuffle
+        number_of_cycles_total: number of trails performed for each session (assuming that all session have the same trail size)
         validation_set_ratio: ratio of validation set out of entire dataset, the rest are training set 
         get_validation_set: whether to return validation dataloader
         cycle_for_test: specify which cycle will be used for testing; no test dataloader returned if None
@@ -27,8 +31,8 @@ def get_dataloader(examples_datasets, labels_datasets, number_of_cycle_for_first
             expected total shape of each dataloader =  
                     (num_trails*num_examples_window*num_mov(40*26*22=22880 total) x features_windwo(252))
                         num_trails = 0.9*total for training 
-                                   = 0.1*total for training 
-                                   = 10 for testing 
+                                   = 0.1*total for validation 
+                                   = 0.25*total for testing 
     """
     participants_dataloaders, participants_dataloaders_validation, participants_dataloaders_test = [], [], []
 
@@ -115,11 +119,14 @@ def load_dataloaders_training_sessions(examples_datasets_train, labels_datasets_
                                        batch_size=128, drop_last=True, shuffle=True, get_validation_set=True,
                                        cycle_for_test=None):
     """
+    Wrapper for building dataloaders. 
+    
     Args:
-        examples_datasets_train: training data
-        labels_datasets_train: training label
+        examples_datasets: ndarray of input examples
+        labels_datasets: ndarray of labels for each example
         number_of_cycle_for_first_training:  number of total trails for the first training session
         number_of_cycles_rest_of_training:  number of total trails for the rest
+        number_of_cycles_total: number of trails performed for each session (assuming that all session have the same trail size)
         batch_size: size of one batch in dataloader
         drop_last: whether to drop data when last set of data < batch_size (only used for train dataloader)
         shuffle: whether to shuffle
@@ -127,7 +134,7 @@ def load_dataloaders_training_sessions(examples_datasets_train, labels_datasets_
         cycle_for_test: specify which cycle will be used for testing; no test dataloader returned if None
     
     Returns: 
-        training, validatio, and test dataloaders
+        training, validatio, and test dataloaders in shape (num_participants x num_sessions)
     """
     train, validation, test = get_dataloader(examples_datasets_train, labels_datasets_train,
                                              number_of_cycle_for_first_training=number_of_cycle_for_first_training,

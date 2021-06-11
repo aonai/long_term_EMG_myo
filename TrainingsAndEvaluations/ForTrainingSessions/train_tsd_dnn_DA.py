@@ -15,22 +15,17 @@ def DANN_Training(gesture_classifier, crossEntropyLoss, optimizer_classifier, tr
                      train_dataset_target, validation_dataset_source, patience_increment=10, max_epochs=500,
                      domain_loss_weight=1e-1):
     """
-    gesture_classification: model
-    crossEntropyLoss
-    optimizer_classifier
-    scheduler
-    
-    target: unlabeled; source: labeled
-    train_dataset_source: the first session of a participant's training set
-    validation_dataset_source:  the first session of a participant's validation set
-    train_dataset_target: one seesion (except for the first) of a participant's traning set
-
-    patience_increment: number of epchos to wait after no best loss is found and before existing training
-    max_epochs
-    
-    domain_loss_weight: coefficient of doman loss percantage to account in calculating loss (loss_main_source and loss_doman_target)
-    
-    
+    Args:
+        gesture_classification: pre-trained TSD model
+        train_dataset_source: the first session of a participant's training set
+        train_dataset_target: one seesion (except for the first) of a participant's traning set
+        validation_dataset_source:  the first session of a participant's validation set
+        patience_increment: number of epchos to wait after no best loss is found and before existing training
+        target: unlabeled; source: labeled
+        domain_loss_weight: coefficient of doman loss percantage to account in calculating loss 
+                        (loss_main_source and loss_doman_target)
+    Returns:
+        best_state: trained weights 
     """
     since = time.time()
     patience = 0 + patience_increment
@@ -213,18 +208,18 @@ def train_DANN(examples_datasets_train, labels_datasets_train, num_kernels,
                           number_of_cycles_total=40, number_of_classes=22, 
                           feature_vector_input_length=252, learning_rate=0.002515):
     """
-    examples_datasets_train
-    labels_datasets_train
-    num_kernels
-    path_weights_to_save_to: path to save DANN weights
-    batch_size
-    patience_increment: number of epchos to wait after no best loss is found and before existing training 
-    path_weights_fine_tuning: path to load normal TSD_DNN weights 
-    number_of_cycle_for_first_training
-    number_of_cycles_rest_of_training
-    number_of_classes
-    feature_vector_input_length
-    learning_rate
+    Wrapper for trainning and saving a DANN model. 
+
+    Args: 
+        examples_datasets: ndarray of input examples
+        labels_datasets: ndarray of labels for each example
+        num_kernels (list of integer): each integer is width of TSD linear block of corresponding layer 
+        path_weights_to_save_to: where to save trained model
+        path_weights_fine_tuning: path to load normal TSD_DNN weights 
+        batch_size:  size of one batch in dataloader
+        number_of_classes: number of classes to train
+        feature_vector_input_length: length of one example data (252)
+        learning_rate
     """
     participants_train, participants_validation, participants_test = load_dataloaders_training_sessions(
         examples_datasets_train, labels_datasets_train, batch_size=batch_size,
@@ -266,19 +261,25 @@ def train_DANN(examples_datasets_train, labels_datasets_train, num_kernels,
             torch.save(best_weights, f=path_weights_to_save_to + "/participant_%d/best_state_%d.pt" % (participant_i, session_j))
 
 def test_DANN_on_training_sessions(examples_datasets_train, labels_datasets_train, num_neurons, feature_vector_input_length,
-                              path_weights_normal='/Weights_TSD/TSD', path_weights_DA='/Weights_TSD/DANN', algo_name="DANN",
-                              save_path='results_tsd', number_of_cycles_total=40, cycle_for_test=None, number_of_classes=22):
+                              path_weights_normal='/Weights/TSD', path_weights_DA='/Weights/DANN', algo_name="DANN",
+                              save_path='results', number_of_cycles_total=40, cycle_for_test=None, number_of_classes=22):
     """
-    examples_datasets_train
-    labels_datasets_train
-    num_neurons (list of integer): each integer is width of TSD model corresponding
-    feature_vector_input_length: size of one example (=252)
-    path_weights_normal: where to load standard training weights from
-    path_weights_DA: where to save DANN weights 
-    save_path: where to save results
-    algo_name: where to save results
-    cycle_for_test: which session to use for testing
-    number_of_classes
+    Test trained model. Stores a txt and npy files that include predictions, ground truths, accuracy table, and 
+    overall accuracies.
+
+    Args: 
+        examples_datasets_train: ndarray of input examples
+        labels_datasets_train: ndarray of labels for each example
+        num_neurons (list of integer): each integer is width of TSD linear block of corresponding layer 
+        feature_vector_input_length: size of one example (=252)
+        path_weights_normal: where to load trained TSD model
+        path_weights_DA: where to load trained DANN model
+        algo_name: nickname of model (this will be included in file name of test results)
+        save_path: where to save test results
+        number_of_cycles_total: total number of trails in one session
+        cycle_for_test: which session to use for testing
+        number_of_classes: number of classes to train
+
     """
     _, _, participants_test = load_dataloaders_training_sessions(examples_datasets_train, labels_datasets_train,
                                                                 number_of_cycles_total=number_of_cycles_total,

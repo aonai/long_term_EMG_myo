@@ -16,17 +16,15 @@ def SCADANN_BN_training(replay_dataset_train, target_validation_dataset, target_
                         optimizer_classifier, scheduler, patience_increment=10, max_epochs=500,
                         domain_loss_weight=2e-1):
     """
-    replay_dataset_train: train dataset of previous 
-    target_validation_dataset: validation dataset of current session
-    target_dataset: train dataset of current session
-    model: trained DANN model for current session
-    crossEntropyLoss
-    optimizer_classifier
-    scheduler
-    patience_increment: number of epchos to wait after no best loss is found and before existing training
-    max_epochs
-    domain_loss_weight: weight of doman loss in calculating source and target losses
-        source = previous datasets, target = current dataset
+    Args:
+        replay_dataset_train: train dataset of previous 
+        target_validation_dataset: validation dataset of current session
+        target_dataset: train dataset of current session
+        model: trained DANN model for current session
+        domain_loss_weight: weight of doman loss in calculating source and target losses
+            source = previous datasets, target = current dataset
+    Returns:
+        best_state: trained weights 
     """
     since = time.time()
 
@@ -227,26 +225,27 @@ def SCADANN_BN_training(replay_dataset_train, target_validation_dataset, target_
 
 
 def run_SCADANN_training_sessions(examples_datasets, labels_datasets, num_kernels, feature_vector_input_length,
-                                  path_weights_to_save_to="Weights_TSD/SCADANN",
-                                  path_weights_Adversarial_training="Weights_TSD/DANN",
-                                  path_weights_Normal_training="Weights_TSD/TSD",
+                                  path_weights_to_save_to="Weights/SCADANN",
+                                  path_weights_Adversarial_training="Weights/DANN",
+                                  path_weights_Normal_training="Weights/TSD",
                                   number_of_cycles_total=40,
                                   number_of_classes=22, 
                                   percentage_same_gesture_stable=0.75,
                                   learning_rate=0.002515):
     """
-    examples_datasets
-    labels_datasets
-    num_neurons
-    feature_vector_input_length
-    path_weights_to_save_to: path to save SCADANN weights
-    path_weights_Adversarial_training: path to load DANN weights
-    path_weights_Normal_training: path to load standard training weights
-    number_of_cycle_for_first_training
-    number_of_cycles_rest_of_training
-    number_of_classes
-    percentage_same_gesture_stable
-    learning_rate
+    Wrapper for trainning and saving a DANN model. 
+
+    Args: 
+        examples_datasets: ndarray of input examples
+        labels_datasets: ndarray of labels for each example
+        num_kernels (list of integer): each integer is width of TSD linear block of corresponding layer 
+        feature_vector_input_length: length of one example data (252)
+        path_weights_to_save_to: where to save trained model
+        path_weights_Adversarial_training: path to load DANN weights 
+        path_weights_Normal_training: path to load normal TSD_DNN weights 
+        number_of_cycles_total: total number of trails in one session
+        number_of_classes: number of classes to train
+        percentage_same_gesture_stable: accuracy of a stable array of input should 
     """
     participants_train, _, _ = load_dataloaders_training_sessions(
         examples_datasets, labels_datasets, batch_size=128,
@@ -321,6 +320,24 @@ def test_network_SLADANN(examples_datasets_train, labels_datasets_train, num_neu
                          path_weights_normal="Weights_TSD/TSD",
                          algo_name="SCADANN", cycle_test=None, number_of_cycles_total=40,
                          number_of_classes=22, save_path = 'results_tsd'):
+    """
+    Test trained model. Stores a txt and npy files that include predictions, ground truths, accuracy table, and 
+    overall accuracies.
+
+    Args: 
+        examples_datasets_train: ndarray of input examples
+        labels_datasets_train: ndarray of labels for each example
+        num_neurons (list of integer): each integer is width of TSD linear block of corresponding layer 
+        feature_vector_input_length: size of one example (=252)
+        path_weights_SCADANN: where to load trained SCADANN model
+        path_weights_normal: where to load trained TSD model
+        algo_name: nickname of model (this will be included in file name of test results)
+        cycle_for_test: specify which cycle will be used for testing; no test dataloader returned if None
+        number_of_cycles_total: total number of trails in one session
+        number_of_classes: number of classes to train
+        save_path: where to save test results
+
+    """
     _, _, participants_test = load_dataloaders_training_sessions(examples_datasets_train, labels_datasets_train, 
                                                                 number_of_cycles_total=number_of_cycles_total,
                                                                  batch_size=512, cycle_for_test=cycle_test)

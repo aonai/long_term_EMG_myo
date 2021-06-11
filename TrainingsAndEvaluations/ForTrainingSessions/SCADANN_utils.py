@@ -83,16 +83,16 @@ def pseudo_labels_heuristic(predictions, model_outputs, window_stable_mode_lengt
     Args:
         predictions: output from model
         model_outputs: softmax of model (likelihood of each label)
-        window_stable_mode_length
-        percentage_same_gesture_now_stable
-        maximum_length_instability_same_gesture
-        maximum_length_instability_gesture_transition
+        window_stable_mode_length: length of inputs to check whether it is stable
+        percentage_same_gesture_now_stable: accuracy of a stable array of input should 
+        maximum_length_instability_same_gesture: maximum length of inputs that can stay stable
+        maximum_length_instability_gesture_transition: maximum length of inputs that can stay unstable
         use_look_back: used only for eval part (check this later)
         len_look_back
     
     Returns:
-        predictions_heuristic
-        predictions_heuristic_index
+        predictions_heuristic: array of pseudo labels 
+        predictions_heuristic_index: array of corresponding index of pseudo labels in the original labels 
     """
     
     
@@ -206,21 +206,22 @@ def pseudo_labels_heuristic_training_sessions(predictions, model_outputs, window
                                               use_look_back=False,
                                               len_look_back=2):
     """
-    Generate pseudo labels for each session
+    wrapper for generate pseudo labels for each session
     
     Args:
-        predictions
-        model_outputs
-        window_stable_mode_length
-        percentage_same_gesture_now_stable
-        maximum_length_instability_same_gesture
-        maximum_length_instability_gesture_transition
-        use_look_back
+        predictions: output from model
+        model_outputs: softmax of model (likelihood of each label)
+        window_stable_mode_lengh: length of inputs to check whether it is stable
+        percentage_same_gesture_now_stable: accuracy of a stable array of input should 
+        maximum_length_instability_same_gesture: maximum length of inputs that can stay stable
+        maximum_length_instability_gesture_transition: maximum length of inputs that can stay unstable
+        use_look_back: used only for eval part (check this later)
         len_look_back
     
     Returns: 
-        pseudo_labels_sessions
-        indexes_associated_with_pseudo_labels_sessions
+        pseudo_labels_sessions: ndarray of pseudo labels for each session
+        indexes_associated_with_pseudo_labels_sessions: ndarray of corresponding index of pseudo labels 
+                                                        for each session
     """
     pseudo_labels_sessions = []
     indexes_associated_with_pseudo_labels_sessions = []
@@ -240,16 +241,16 @@ def pseudo_labels_heuristic_training_sessions(predictions, model_outputs, window
 def generate_dataloaders_for_SCADANN(dataloader_sessions, models, current_session, validation_set_ratio=0.2,
                                      batch_size=128, percentage_same_gesture_stable=0.75):
     """
+    Wrapper for generating pseudo labeled dataloaders for one participant and one session
     Use dataset labels for first session, pseudo_labels for the others (seconds to current sessions)
     
     Args:
         dataloader_sessions: dataloader for one participant 
         models: models for one participant
         current_session: current training session
-
         validation_set_ratio: percentage of validation set
-        batch_size
-        percentage_same_gesture_stable: 
+        batch_size: size of one batch in dataloader
+        percentage_same_gesture_stable: accuracy of a stable array of input should 
         
     Returns:
         train_dataloader_replay: train data of previous sessions (including the first)
