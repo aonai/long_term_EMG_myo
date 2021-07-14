@@ -40,8 +40,8 @@ class TSD_Network(nn.Module):
         self._network = nn.ModuleList(layers)
         self._output = nn.Linear(num_neurons[-1], number_of_class)
         self._output_discriminator = nn.Linear(num_neurons[-1], 2)  # Two domains: Source and Target
-        print(self)
-        print("Number Parameters: ", self.get_n_params())
+        # print(self)
+        # print("Number Parameters: ", self.get_n_params())
 
     def get_n_params(self):
         model_parameters = filter(lambda p: p.requires_grad, self.parameters())
