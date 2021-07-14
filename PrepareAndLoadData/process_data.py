@@ -267,7 +267,7 @@ def read_files_to_format_training_session(path_folder_examples, day_num,
 
 def get_data_and_process_it_from_file(path, number_of_gestures=22, number_of_cycles=4, window_size=50, 
                                         size_non_overlap=10, num_participant=5, sessions_to_include = [0,1,2], 
-                                        switch=0):
+                                        switch=0, start_at_participant=1):
     
     """
     Wrapper for loading data from desired folders. 
@@ -286,6 +286,8 @@ def get_data_and_process_it_from_file(path, number_of_gestures=22, number_of_cyc
                 case 2 = across days (among the same subject and wearing location)
                     when choosing case 2, remember to sepcify which session to include
                     one assumption for this case is that only one session (wearing location) is included for training
+        start_at_participant: paramerter for case 1. Indicates which subject is the used as base model for 
+                                DANN and SCADANN training. 
 
     Returns:
         data dictionary containing an array of `examples_training` and `labels_training`
@@ -293,11 +295,11 @@ def get_data_and_process_it_from_file(path, number_of_gestures=22, number_of_cyc
     examples_training_sessions_datasets, labels_training_sessions_datasets = [], []
 
     # load one participant for now
-    if switch == 0:
+    if switch == 1:
         for session_idx in sessions_to_include:
             # load one participant data 
             examples_participant_training_sessions, labels_participant_training_sessions = [], []
-            for index_participant in range(1,1+num_participant):
+            for index_participant in range(start_at_participant,start_at_participant+num_participant):
                 folder_participant = "sub" + str(index_participant)
                 days_of_current_session = index_of_sessions[session_idx]
                 if session_idx in sessions_to_include:
@@ -306,6 +308,7 @@ def get_data_and_process_it_from_file(path, number_of_gestures=22, number_of_cyc
                     for day_num in days_of_current_session:
                         path_folder_examples = path + "/" + folder_participant + "/day" + str(day_num)
                         # print("current dr = ", day_num)
+                        print("READ ", "Sub", index_participant, "_Loc", sessions_to_include[0], "_Day", day_num)
                         
                         examples_training, labels_training  = \
                             read_files_to_format_training_session(path_folder_examples=path_folder_examples,
@@ -331,8 +334,8 @@ def get_data_and_process_it_from_file(path, number_of_gestures=22, number_of_cyc
             print('all traning examples ', np.shape(examples_training_sessions_datasets))
             print('all traning labels ', np.shape(labels_training_sessions_datasets))
 
-    elif switch == 1:
-        for index_participant in range(1,1+num_participant):
+    elif switch == 0:
+        for index_participant in range(1, 1+num_participant):
             # load one participant data 
             folder_participant = "sub" + str(index_participant)
             examples_participant_training_sessions, labels_participant_training_sessions = [], []
@@ -344,6 +347,7 @@ def get_data_and_process_it_from_file(path, number_of_gestures=22, number_of_cyc
                     for day_num in days_of_current_session:
                         path_folder_examples = path + "/" + folder_participant + "/day" + str(day_num)
                         # print("current dr = ", day_num)
+                        print("READ ", "Sub", index_participant, "_Loc", sessions_to_include[0], "_Day", day_num)
                         
                         examples_training, labels_training  = \
                             read_files_to_format_training_session(path_folder_examples=path_folder_examples,
@@ -415,7 +419,7 @@ def get_data_and_process_it_from_file(path, number_of_gestures=22, number_of_cyc
 
 def read_data_training(path, store_path, number_of_gestures=22, number_of_cycles=4, window_size=50, 
                         size_non_overlap=10, num_participant=5, sessions_to_include=[0,1,2], 
-                        switch=0):
+                        switch=0,start_at_participant=1):
     """
     Wrapper for reading and processing raw data. A npy file containing a dirctory for processed data is stored.
     This directory has key `examples_training` that stores windows of processed emg signal and key `labels_training` 
@@ -433,6 +437,14 @@ def read_data_training(path, store_path, number_of_gestures=22, number_of_cycles
                             session 0: neutral position
                             session 1: inward rotation 
                             session 2: outward rotation
+        swtich: which of the following case to run
+                case 0 = across wearing locations; participants_num x sessions_num(3) 
+                case 1 = across subjects; sessions_num(3) x participants_num
+                case 2 = across days (among the same subject and wearing location)
+                    when choosing case 2, remember to sepcify which session to include
+                    one assumption for this case is that only one session (wearing location) is included for training
+        start_at_participant: paramerter for case 1. Indicates which subject is the used as base model for 
+                                DANN and SCADANN training. Remeber to change to appropriate num_participant. 
 
     """
     print("Loading and preparing Training datasets...")
@@ -441,7 +453,8 @@ def read_data_training(path, store_path, number_of_gestures=22, number_of_cycles
                                                             size_non_overlap=size_non_overlap, 
                                                             num_participant=num_participant,
                                                             sessions_to_include = sessions_to_include, 
-                                                            switch=switch)
+                                                            switch=switch,
+                                                            start_at_participant=start_at_participant)
 
     # store dictionary to pickle
     training_session_dataset_dictionnary = {}
