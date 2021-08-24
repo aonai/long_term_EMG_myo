@@ -7,6 +7,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 
+from Models.spectrogram_ConvNet import SpectrogramConvNet
 from Models.TSD_neural_network import TSD_Network
 from PrepareAndLoadData.load_dataset_in_dataloader import load_dataloaders_training_sessions
 from TrainingsAndEvaluations.ForTrainingSessions.train_tsd_dnn_standard import load_checkpoint
@@ -206,7 +207,7 @@ def train_DANN(examples_datasets_train, labels_datasets_train, num_kernels,
                           path_weights_to_save_to="Weights_TSD/DANN", batch_size=512, patience_increment=10,
                           path_weights_fine_tuning="Weights_TSD/TSD",
                           number_of_cycles_total=40, number_of_classes=22, 
-                          feature_vector_input_length=252, learning_rate=0.002515):
+                          feature_vector_input_length=252, learning_rate=0.002515,neural_net="TSD", filter_size=(4, 10)):
     """
     Wrapper for trainning and saving a DANN model. 
 
@@ -232,8 +233,12 @@ def train_DANN(examples_datasets_train, labels_datasets_train, num_kernels,
         for session_j in range(1, len(participants_train[participant_i])):
             print(np.shape(participants_train[participant_i][session_j]))
 
-            gesture_classification = TSD_Network(number_of_class=number_of_classes, num_neurons=num_kernels,
-                                                 feature_vector_input_length=feature_vector_input_length)
+            if neural_net == 'TSD':
+                gesture_classification = TSD_Network(number_of_class=number_of_classes, num_neurons=num_kernels,
+                                feature_vector_input_length=feature_vector_input_length)
+            elif neural_net == 'Spectrogram':
+                gesture_classification = SpectrogramConvNet(number_of_class=number_of_classes, num_kernels=num_kernels,
+                                kernel_size=filter_size)
 
             # loss functions
             crossEntropyLoss = nn.CrossEntropyLoss()
@@ -260,10 +265,10 @@ def train_DANN(examples_datasets_train, labels_datasets_train, num_kernels,
                 os.makedirs(path_weights_to_save_to + "/participant_%d" % participant_i)
             torch.save(best_weights, f=path_weights_to_save_to + "/participant_%d/best_state_%d.pt" % (participant_i, session_j))
 
-def test_DANN_on_training_sessions(examples_datasets_train, labels_datasets_train, num_neurons, feature_vector_input_length,
+def test_DANN_on_training_sessions(examples_datasets_train, labels_datasets_train, num_neurons, feature_vector_input_length=252,
                               path_weights_normal='/Weights/TSD', path_weights_DA='/Weights/DANN', algo_name="DANN",
                               save_path='results', number_of_cycles_total=40, cycle_for_test=None, number_of_classes=22,
-                              across_sub=False):
+                              across_sub=False,neural_net="TSD", filter_size=(4, 10)):
     """
     Test trained model. Stores a txt and npy files that include predictions, ground truths, accuracy table, and 
     overall accuracies.
@@ -294,8 +299,12 @@ def test_DANN_on_training_sessions(examples_datasets_train, labels_datasets_trai
         predictions_participant = []
         ground_truth_participant = []
         accuracies_participant = []
-        model = TSD_Network(number_of_class=number_of_classes, feature_vector_input_length=feature_vector_input_length,
-                            num_neurons=num_neurons)
+        if neural_net == 'TSD':
+            model = TSD_Network(number_of_class=number_of_classes, num_neurons=num_neurons,
+                            feature_vector_input_length=feature_vector_input_length)
+        elif neural_net == 'Spectrogram':
+            model = SpectrogramConvNet(number_of_class=number_of_classes, num_kernels=num_neurons,
+                            kernel_size=filter_size)
         print(np.shape(dataset_test))
         for session_index, training_session_test_data in enumerate(dataset_test):
             if across_sub:

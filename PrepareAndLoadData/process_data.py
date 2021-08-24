@@ -3,7 +3,7 @@ import pickle
 import numpy as np
 import pandas as pd
 from itertools import combinations
-
+from PrepareAndLoadData.calculate_spectrograms import calculate_single_example
 
 sys.path.insert(0,'../..')
 
@@ -190,7 +190,7 @@ def getTSD(all_channels_data_in_window):
     return feat
 
 
-def format_examples(emg_examples, window_size=50, size_non_overlap=10):
+def format_examples(emg_examples, window_size=50, size_non_overlap=10, spectrogram=False):
     """ 
     Process EMG signals and then put into one window
 
@@ -213,18 +213,22 @@ def format_examples(emg_examples, window_size=50, size_non_overlap=10):
         
         # store one window_size of signal
         if len(example) >= window_size:
-            if not np.sum(example) == 0:   # avoid all zero signals
-                featured_example = getTSD(example.transpose())
-                formated_examples.append(np.array(featured_example).transpose().flatten())
+            if spectrogram:
+                spectrogram_example = calculate_single_example(example.transpose(), frequency=fs)
+                formated_examples.append(np.array(spectrogram_example))
             else:
-                formated_examples.append(np.zeros((252)))
+                if not np.sum(example) == 0:   # avoid all zero signals
+                    featured_example = getTSD(example.transpose())
+                    formated_examples.append(np.array(featured_example).transpose().flatten())
+                else:
+                    formated_examples.append(np.zeros((252)))
             # Remove part of the data of the example according to the size_non_overlap variable
             example = example[size_non_overlap:]
     return formated_examples
 
 def read_files_to_format_training_session(path_folder_examples, day_num,
                                           number_of_cycles, number_of_gestures, window_size,
-                                          size_non_overlap):
+                                          size_non_overlap,include_gestures=None, spectrogram=False):
     """
     Read csv files in one day, put raw signals into an array, then process the signals using TSD function 
     and put into windows 
@@ -243,20 +247,38 @@ def read_files_to_format_training_session(path_folder_examples, day_num,
     
     for cycle in range(1, number_of_cycles+1):
         examples, labels = [], []
-        for gesture_index in range(1, number_of_gestures+1):
-            read_file = path_folder_examples + "/D" + str(day_num) + "M" + str(gesture_index) + "T" + str(cycle) + ".csv"
-            # print("      READ ", read_file)
-            examples_to_format = pd.read_csv(read_file, header=None).to_numpy()
-            # each file contains 15s (300 rows) of 8 channel signals 
-            # print("            data = ", np.shape(examples_to_format))
-            
-            examples_formatted = format_examples(examples_to_format,
-                                     window_size=window_size,
-                                     size_non_overlap=size_non_overlap)
-            # print("            formated = ", np.shape(examples_formatted))
+        if include_gestures:
+            for num_idx, gesture_index in enumerate(include_gestures):
+                read_file = path_folder_examples + "/D" + str(day_num) + "M" + str(gesture_index) + "T" + str(cycle) + ".csv"
+                # print("      READ ", read_file)
+                examples_to_format = pd.read_csv(read_file, header=None).to_numpy()
+                # each file contains 15s (300 rows) of 8 channel signals 
+                # print("            data = ", np.shape(examples_to_format))
+                
+                examples_formatted = format_examples(examples_to_format,
+                                        window_size=window_size,
+                                        size_non_overlap=size_non_overlap,
+                                        spectrogram=spectrogram)
+                # print("            formated = ", np.shape(examples_formatted))
 
-            examples.extend(examples_formatted)
-            labels.extend(np.ones(len(examples_formatted)) * (gesture_index-1))
+                examples.extend(examples_formatted)
+                labels.extend(np.ones(len(examples_formatted)) * num_idx)
+        else:
+            for gesture_index in range(1, number_of_gestures+1):
+                read_file = path_folder_examples + "/D" + str(day_num) + "M" + str(gesture_index) + "T" + str(cycle) + ".csv"
+                # print("      READ ", read_file)
+                examples_to_format = pd.read_csv(read_file, header=None).to_numpy()
+                # each file contains 15s (300 rows) of 8 channel signals 
+                print("            data = ", np.shape(examples_to_format))
+                
+                examples_formatted = format_examples(examples_to_format,
+                                        window_size=window_size,
+                                        size_non_overlap=size_non_overlap,
+                                        spectrogram=spectrogram)
+                print("            formated = ", np.shape(examples_formatted))
+
+                examples.extend(examples_formatted)
+                labels.extend(np.ones(len(examples_formatted)) * (gesture_index-1))
             
         # print("   SHAPE SESSION ", cycle, " EXAMPLES: ", np.shape(examples))
         examples_training.append(examples)
@@ -267,7 +289,7 @@ def read_files_to_format_training_session(path_folder_examples, day_num,
 
 def get_data_and_process_it_from_file(path, number_of_gestures=22, number_of_cycles=4, window_size=50, 
                                         size_non_overlap=10, num_participant=5, sessions_to_include = [0,1,2], 
-                                        switch=0, start_at_participant=1):
+                                        switch=0, start_at_participant=1, include_gestures=None, spectrogram=False):
     
     """
     Wrapper for loading data from desired folders. 
@@ -316,7 +338,9 @@ def get_data_and_process_it_from_file(path, number_of_gestures=22, number_of_cyc
                                                                 number_of_cycles=number_of_cycles,
                                                                 number_of_gestures=number_of_gestures,
                                                                 window_size=window_size,
-                                                                size_non_overlap=size_non_overlap)
+                                                                size_non_overlap=size_non_overlap,
+                                                                include_gestures=include_gestures,
+                                                                spectrogram=spectrogram)
                         examples_per_session.extend(examples_training)
                         labels_per_session.extend(labels_training)
                     examples_participant_training_sessions.append(examples_per_session)
@@ -329,8 +353,8 @@ def get_data_and_process_it_from_file(path, number_of_gestures=22, number_of_cyc
             examples_training_sessions_datasets.append(examples_participant_training_sessions)
             labels_training_sessions_datasets.append(labels_participant_training_sessions)
 
-            # sessions_num(3) x participants_num x days_per_session(10)*trail_per_day(4*num_participant) x #examples_window*#mov(26*22=572) x window_size x channel_num
-            # sessions_num(3) x participants_num x days_per_session(10)*trail_per_day(4*num_participant) x #examples_window*#mov(26*22=572)
+            # sessions_num(3) x participants_num x days_per_session(10)*trail_per_day(4) x #examples_window*#mov(26*22=572) x window_size x channel_num
+            # sessions_num(3) x participants_num x days_per_session(10)*trail_per_day(4) x #examples_window*#mov(26*22=572)
             print('all traning examples ', np.shape(examples_training_sessions_datasets))
             print('all traning labels ', np.shape(labels_training_sessions_datasets))
 
@@ -348,14 +372,15 @@ def get_data_and_process_it_from_file(path, number_of_gestures=22, number_of_cyc
                         path_folder_examples = path + "/" + folder_participant + "/day" + str(day_num)
                         # print("current dr = ", day_num)
                         print("READ ", "Sub", index_participant, "_Loc", sessions_to_include[0], "_Day", day_num)
-                        
                         examples_training, labels_training  = \
                             read_files_to_format_training_session(path_folder_examples=path_folder_examples,
                                                                 day_num = day_num,
                                                                 number_of_cycles=number_of_cycles,
                                                                 number_of_gestures=number_of_gestures,
                                                                 window_size=window_size,
-                                                                size_non_overlap=size_non_overlap)
+                                                                size_non_overlap=size_non_overlap,
+                                                                include_gestures=include_gestures,
+                                                                spectrogram=spectrogram)
                         examples_per_session.extend(examples_training)
                         labels_per_session.extend(labels_training)
                     examples_participant_training_sessions.append(examples_per_session)
@@ -392,7 +417,9 @@ def get_data_and_process_it_from_file(path, number_of_gestures=22, number_of_cyc
                                                         number_of_cycles=number_of_cycles,
                                                         number_of_gestures=number_of_gestures,
                                                         window_size=window_size,
-                                                        size_non_overlap=size_non_overlap)
+                                                        size_non_overlap=size_non_overlap,
+                                                        include_gestures=include_gestures,
+                                                        spectrogram=spectrogram)
                 examples_per_session.append(examples_training)
                 labels_per_session.append(labels_training)
                 print("examples_per_session = ", np.shape(examples_per_session))
@@ -419,7 +446,7 @@ def get_data_and_process_it_from_file(path, number_of_gestures=22, number_of_cyc
 
 def read_data_training(path, store_path, number_of_gestures=22, number_of_cycles=4, window_size=50, 
                         size_non_overlap=10, num_participant=5, sessions_to_include=[0,1,2], 
-                        switch=0,start_at_participant=1):
+                        switch=0,start_at_participant=1, include_gestures = None, spectrogram=False):
     """
     Wrapper for reading and processing raw data. A npy file containing a dirctory for processed data is stored.
     This directory has key `examples_training` that stores windows of processed emg signal and key `labels_training` 
@@ -454,7 +481,9 @@ def read_data_training(path, store_path, number_of_gestures=22, number_of_cycles
                                                             num_participant=num_participant,
                                                             sessions_to_include = sessions_to_include, 
                                                             switch=switch,
-                                                            start_at_participant=start_at_participant)
+                                                            start_at_participant=start_at_participant,
+                                                            include_gestures=include_gestures,
+                                                            spectrogram=spectrogram)
 
     # store dictionary to pickle
     training_session_dataset_dictionnary = {}

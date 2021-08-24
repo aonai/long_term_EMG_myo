@@ -36,7 +36,8 @@ def get_gesture_accuracies(ground_truths, predictions, number_of_classes=22, m_n
             for i, g in enumerate(ground):
                 p = pred[i]
                 pred_tmp[g].append(p)
-            #print("gestures pred = ", np.shape(pred_tmp))
+
+            # print("gestures pred = ", np.shape(pred_tmp))
             
             for gesture_idx, gesture_pred in enumerate(pred_tmp):
                 acc = np.mean(np.array(gesture_pred) == np.ones(np.shape(gesture_pred))*gesture_idx)

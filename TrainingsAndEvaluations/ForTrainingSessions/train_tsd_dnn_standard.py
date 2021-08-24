@@ -8,6 +8,7 @@ import torch.nn as nn
 import torch.optim as optim
 
 from Models.TSD_neural_network import TSD_Network
+from Models.spectrogram_ConvNet import SpectrogramConvNet
 from PrepareAndLoadData.load_dataset_in_dataloader import load_dataloaders_training_sessions
 
 def train_model_standard(model, criterion, optimizer, scheduler, dataloaders, num_epochs=500, precision=1e-8,
@@ -118,7 +119,7 @@ def load_checkpoint(model, filename, optimizer=None, scheduler=None, strict=True
 def train_fine_tuning(examples_datasets_train, labels_datasets_train, num_kernels,
                     number_of_cycles_total=40, 
                     path_weight_to_save_to="Weights/unknown", number_of_classes=22, batch_size=128,
-                    feature_vector_input_length=252, learning_rate=0.002515):
+                    feature_vector_input_length=252, learning_rate=0.002515, neural_net='TSD', filter_size=(4,10)):
     """
     Train model using the first session, then fine tune using the others. 
 
@@ -144,8 +145,12 @@ def train_fine_tuning(examples_datasets_train, labels_datasets_train, num_kernel
         for session_j in range(0, len(participants_train[participant_i])):
             print("Session: ", session_j)
             # Define Model
-            model = TSD_Network(number_of_class=number_of_classes, num_neurons=num_kernels,
+            if neural_net == 'TSD':
+                model = TSD_Network(number_of_class=number_of_classes, num_neurons=num_kernels,
                                 feature_vector_input_length=feature_vector_input_length)
+            elif neural_net == 'Spectrogram':
+                model = SpectrogramConvNet(number_of_class=number_of_classes, num_kernels=num_kernels,
+                                kernel_size=filter_size)
 
             # Define Loss functions
             cross_entropy_loss_classes = nn.CrossEntropyLoss(reduction='mean')
@@ -184,7 +189,7 @@ def test_TSD_DNN_on_training_sessions(examples_datasets_train, labels_datasets_t
                                       feature_vector_input_length=252,
                                       path_weights='/Weights', save_path='results', algo_name="Normal_Training",
                                       use_only_first_training=False, cycle_for_test=None, number_of_cycles_total=40,
-                                      number_of_classes=22, across_sub=False):
+                                      number_of_classes=22, across_sub=False, neural_net="TSD", filter_size=(4, 10)):
     """
     Test trained model. Stores a txt and npy files that include predictions, ground truths, accuracy table, and 
     overall accuracies. 
@@ -218,9 +223,13 @@ def test_TSD_DNN_on_training_sessions(examples_datasets_train, labels_datasets_t
         accuracies_participant = []
         
         # get model
-        model = TSD_Network(number_of_class=number_of_classes, feature_vector_input_length=feature_vector_input_length,
-                            num_neurons=num_neurons)
-        
+        if neural_net == 'TSD':
+            model = TSD_Network(number_of_class=number_of_classes, num_neurons=num_neurons,
+                            feature_vector_input_length=feature_vector_input_length)
+        elif neural_net == 'Spectrogram':
+            model = SpectrogramConvNet(number_of_class=number_of_classes, num_kernels=num_neurons,
+                            kernel_size=filter_size)
+
         # start test
         for session_index, training_session_test_data in enumerate(dataset_test):
             print(session_index, " SESSION   data = ", len(training_session_test_data.dataset))
@@ -302,5 +311,6 @@ def test_TSD_DNN_on_training_sessions(examples_datasets_train, labels_datasets_t
         myfile.write("ACCURACIES: \n")
         myfile.write(str(accuracies) + '\n')
         myfile.write("OVERALL ACCURACY: " + str(np.mean(accuracies_to_display)))
+
 
 

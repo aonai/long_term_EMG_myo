@@ -6,6 +6,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 
+from Models.spectrogram_ConvNet import SpectrogramConvNet
 from Models.TSD_neural_network import TSD_Network
 from PrepareAndLoadData.load_dataset_in_dataloader import load_dataloaders_training_sessions
 from TrainingsAndEvaluations.ForTrainingSessions.train_tsd_dnn_standard import load_checkpoint
@@ -224,14 +225,14 @@ def SCADANN_BN_training(replay_dataset_train, target_validation_dataset, target_
     return best_state
 
 
-def run_SCADANN_training_sessions(examples_datasets, labels_datasets, num_kernels, feature_vector_input_length,
+def run_SCADANN_training_sessions(examples_datasets, labels_datasets, num_kernels, feature_vector_input_length=252,
                                   path_weights_to_save_to="Weights/SCADANN",
                                   path_weights_Adversarial_training="Weights/DANN",
                                   path_weights_Normal_training="Weights/TSD",
                                   number_of_cycles_total=40,
                                   number_of_classes=22, 
                                   percentage_same_gesture_stable=0.75,
-                                  learning_rate=0.002515):
+                                  learning_rate=0.002515, neural_net='TSD', filter_size=(4, 10)):
     """
     Wrapper for trainning and saving a DANN model. 
 
@@ -255,8 +256,13 @@ def run_SCADANN_training_sessions(examples_datasets, labels_datasets, num_kernel
     print("participants_train = ", len(participants_train))
     for participant_i in range(len(participants_train)):
         for session_j in range(1, len(participants_train[participant_i])):
-            model = TSD_Network(number_of_class=number_of_classes, num_neurons=num_kernels,
+            
+            if neural_net == 'TSD':
+                model = TSD_Network(number_of_class=number_of_classes, num_neurons=num_kernels,
                                 feature_vector_input_length=feature_vector_input_length)
+            elif neural_net == 'Spectrogram':
+                model = SpectrogramConvNet(number_of_class=number_of_classes, num_kernels=num_kernels,
+                                kernel_size=filter_size)
 
             # Define Loss functions
             cross_entropy_loss_classes = nn.CrossEntropyLoss(reduction='mean')
@@ -280,8 +286,12 @@ def run_SCADANN_training_sessions(examples_datasets, labels_datasets, num_kernel
             # Load DANN models for the others (previous sessions including the current one)
             models_array = []
             for j in range(0, session_j + 1):
-                model_temp = TSD_Network(number_of_class=number_of_classes, num_neurons=num_kernels,
-                                         feature_vector_input_length=feature_vector_input_length)
+                if neural_net == 'TSD':
+                    model_temp = TSD_Network(number_of_class=number_of_classes, num_neurons=num_kernels,
+                                    feature_vector_input_length=feature_vector_input_length)
+                elif neural_net == 'Spectrogram':
+                    model_temp = SpectrogramConvNet(number_of_class=number_of_classes, num_kernels=num_kernels,
+                                    kernel_size=filter_size)
                 if j == 0:
                     model_temp, _, _, _ = load_checkpoint(
                         model=model_temp, optimizer=None, scheduler=None,
@@ -315,11 +325,11 @@ def run_SCADANN_training_sessions(examples_datasets, labels_datasets, num_kernel
             torch.save(best_state, f=path_weights_to_save_to +
                                      "/participant_%d/best_state_%d.pt" % (participant_i, session_j))
 
-def test_network_SLADANN(examples_datasets_train, labels_datasets_train, num_neurons, feature_vector_input_length,
+def test_network_SLADANN(examples_datasets_train, labels_datasets_train, num_neurons, feature_vector_input_length=252,
                          path_weights_SCADANN ="Weights_TSD/SCADANN",
                          path_weights_normal="Weights_TSD/TSD",
                          algo_name="SCADANN", cycle_test=None, number_of_cycles_total=40,
-                         number_of_classes=22, save_path = 'results_tsd', across_sub=False):
+                         number_of_classes=22, save_path = 'results_tsd', across_sub=False,neural_net="TSD", filter_size=(4, 10)):
     """
     Test trained model. Stores a txt and npy files that include predictions, ground truths, accuracy table, and 
     overall accuracies.
@@ -351,8 +361,12 @@ def test_network_SLADANN(examples_datasets_train, labels_datasets_train, num_neu
         predictions_participant = []
         ground_truth_participant = []
         accuracies_participant = []
-        model = TSD_Network(number_of_class=number_of_classes, num_neurons=num_neurons,
+        if neural_net == 'TSD':
+            model = TSD_Network(number_of_class=number_of_classes, num_neurons=num_neurons,
                             feature_vector_input_length=feature_vector_input_length)
+        elif neural_net == 'Spectrogram':
+            model = SpectrogramConvNet(number_of_class=number_of_classes, num_kernels=num_neurons,
+                            kernel_size=filter_size)
         for session_index, training_session_test_data in enumerate(dataset_test):
             if across_sub:          
                 best_state = torch.load(
