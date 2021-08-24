@@ -57,8 +57,8 @@ def pseudo_labels_heuristic(predictions, model_outputs, window_stable_mode_lengt
                             maximum_length_instability_gesture_transition=10, use_look_back=False,
                             len_look_back=2):
     """
-    Generate pseudo labels for one session
-    unstable == transition in labels
+    Generate pseudo labels for one session. 
+    unstable means there is transition in labels
         start collecting data into model_output_in_unstable_mode when transition occurs
         if actual transition between gestures if model output percentage > percentage_same_gesture_now_stable
             in this case, go back to collecting stable data 
@@ -82,11 +82,10 @@ def pseudo_labels_heuristic(predictions, model_outputs, window_stable_mode_lengt
         predictions: output from model
         model_outputs: softmax of model (likelihood of each label)
         window_stable_mode_length: length of inputs to check whether it is stable
-        percentage_same_gesture_now_stable: accuracy of a stable array of input should 
+        percentage_same_gesture_now_stable: accuracy of a stable array of input should have
         maximum_length_instability_same_gesture: maximum length of inputs that can stay stable
         maximum_length_instability_gesture_transition: maximum length of inputs that can stay unstable
-        use_look_back: used only for eval part (check this later)
-        len_look_back
+        use_look_back, len_look_back: used only for eval part (see https://github.com/UlysseCoteAllard/LongTermEMG)
     
     Returns:
         predictions_heuristic: array of pseudo labels 
@@ -213,8 +212,8 @@ def pseudo_labels_heuristic_training_sessions(predictions, model_outputs, window
         percentage_same_gesture_now_stable: accuracy of a stable array of input should 
         maximum_length_instability_same_gesture: maximum length of inputs that can stay stable
         maximum_length_instability_gesture_transition: maximum length of inputs that can stay unstable
-        use_look_back: used only for eval part (check this later)
-        len_look_back
+        use_look_back, len_look_back: used only for eval part (see https://github.com/UlysseCoteAllard/LongTermEMG)
+
     
     Returns: 
         pseudo_labels_sessions: ndarray of pseudo labels for each session

@@ -1,4 +1,4 @@
-import os, sys
+import os
 import time
 import copy
 import numpy as np
@@ -126,14 +126,16 @@ def train_fine_tuning(examples_datasets_train, labels_datasets_train, num_kernel
     Args:
         examples_datasets: ndarray of input examples
         labels_datasets: ndarray of labels for each example
-        num_kernels (list of integer): each integer is width of TSD linear block of corresponding layer 
+        num_neurons (list of integer): each integer is width of TSD linear block of corresponding layer or output channels of ConvNet model
         number_of_cycle_for_first_training:  number of total trails for the first training session
         number_of_cycles_rest_of_training:  number of total trails for the rest
         path_weight_to_save_to: where to save trained model
         number_of_classes: number of classes to train
         batch_size:  size of one batch in dataloader
-        feature_vector_input_length: length of one example data (252)
+        feature_vector_input_length: length of one example data (252) for TSD model
         learning_rate
+        neural_net: specify which training model to use; options are 'TSD' and 'ConvNet'
+        filter_size: kernel size of ConvNet model; should be a 2d list of shape (m, 2), where m (4) is number of levels
     """ 
     participants_train, participants_validation, _ = load_dataloaders_training_sessions(
         examples_datasets_train, labels_datasets_train, batch_size=batch_size,
@@ -185,28 +187,32 @@ def train_fine_tuning(examples_datasets_train, labels_datasets_train, num_kernel
                                      % (participant_i, session_j))
 
 
-def test_TSD_DNN_on_training_sessions(examples_datasets_train, labels_datasets_train, num_neurons,
+def test_standard_model_on_training_sessions(examples_datasets_train, labels_datasets_train, num_neurons,
                                       feature_vector_input_length=252,
                                       path_weights='/Weights', save_path='results', algo_name="Normal_Training",
-                                      use_only_first_training=False, cycle_for_test=None, number_of_cycles_total=40,
+                                      use_only_first_training=False, cycle_for_test=3, number_of_cycles_total=40,
                                       number_of_classes=22, across_sub=False, neural_net="TSD", filter_size=(4, 10)):
     """
-    Test trained model. Stores a txt and npy files that include predictions, ground truths, accuracy table, and 
-    overall accuracies. 
+    Test trained model. Stores a txt and npy files that include accuracies, predictions, ground truths, and model outputs.
 
     Args: 
         examples_datasets: ndarray of input examples
         labels_datasets: ndarray of labels for each example
-        num_neurons (list of integer): each integer is width of TSD linear block of corresponding layer 
+        num_neurons (list of integer): each integer is width of TSD linear block of corresponding layer or output channels of ConvNet model
+        feature_vector_input_length: length of one example data (252) for TSD model
         path_weights: where to load trained model
         save_path: where to save test results
         algo_name: nickname of model (this will be included in file name of test results)
         use_only_first_training: 
             load weights from first trainning session only if True; 
             otherwise use fine tunning weights (trained from all four sessions)
-        cycle_for_test: which session to use for testing
+        cycle_for_test: which session to use for testing; default is the last session (3)
         number_of_cycles_total: total number of trails in one session
         number_of_classes: number of classes to train
+        across_sub: whether model is trained across subject; base model weights is always 
+                    stored at /participant_0/best_state_0
+        neural_net: specify which training model to use; options are 'TSD' and 'ConvNet'
+        filter_size: kernel size of ConvNet model; should be a 2d list of shape (m, 2), where m (4) is number of levels
 
     """
     _, _, participants_test = load_dataloaders_training_sessions(examples_datasets_train, labels_datasets_train,

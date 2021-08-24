@@ -1,15 +1,4 @@
-import re
-import math
-import numpy as np
-import collections
-
-import torch
-from torch import nn
-import torch.nn.functional as F
 from torch.autograd import Function
-from torch.nn.parameter import Parameter
-from torch.nn.modules.loss import _WeightedLoss
-import torch.distributions.normal as NormalDistribution
 
 
 class ReversalGradientLayerF(Function):

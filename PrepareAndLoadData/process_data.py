@@ -1,12 +1,22 @@
-import os, sys
+import sys
 import pickle
 import numpy as np
 import pandas as pd
 from itertools import combinations
+
 from PrepareAndLoadData.calculate_spectrograms import calculate_single_example
 
 sys.path.insert(0,'../..')
 
+
+"""  Params for Longterm_myo dataset
+Dataset recorded by https://github.com/Suguru55/Wearable_Sensor_Long-term_sEMG_Dataset
+
+N = neutral position
+I = inward rotation
+O = outward rotation
+
+"""
 pos = ['N', 'I', 'O', 'N', 'I', 'I', 'O', 'O', 'N', 'N',      # 1-10th day 
       'O', 'N', 'N', 'O', 'O', 'I', 'I', 'I', 'N', 'O',       # 11-20th day
       'O', 'I', 'O', 'I', 'I', 'N', 'N', 'I', 'N', 'O']       # 21-30th day
@@ -14,19 +24,19 @@ pos = ['N', 'I', 'O', 'N', 'I', 'I', 'O', 'O', 'N', 'N',      # 1-10th day
 pos_label = [1, 2, 3, 1, 2, 2, 3, 3, 1, 1,
             3, 1, 1, 3, 3, 2, 2, 2, 1, 3,
             3, 2, 3, 2, 2, 1, 1, 2, 1, 3] # N: 1, I: 2, O: 3
-# days correspond to N, I, and O positions
+# record days correspond to N, I, and O positions
 index_of_sessions = [[],[],[]]
 for idx, pl in enumerate(pos_label):
     index_of_sessions[pl-1].append(idx+1)
 
-day_num = 30
-sub_num = 5
-mov_num = 22
-fs = 200
-ch_num = 8
-trial_num = 4
-
-win_size = 50            # 250ms window
+day_num = 30            # total number of days recorded
+sub_num = 5             # total number of subjects recorded
+mov_num = 22            # total number of gestures recorded
+fs = 200                # myo sampling frequency 
+ch_num = 8              # myo channel number
+trial_num = 4           # total number of trials recorded per gesture  
+# analysis window for sEMG
+win_size = 50            # 250ms window 
 win_inc = 10             # 50ms overlap
 
 
@@ -198,10 +208,12 @@ def format_examples(emg_examples, window_size=50, size_non_overlap=10, spectrogr
         emg_examples: list of emg signals, each row represent one recording of a 8 channel emg
         window_size: analysis window size
         size_non_overlap: length of non-overlap portion between each analysis window
+        spectrogram: whether to process sEMG into spectrograms 
 
     Returns:
         formated_examples: (252,) array including 7 features for each channel and for each two 
                             combination of channel signals
+                            or spectrogram array of shape (4, 8, 10) 
     """
     formated_examples = []
     example = []
@@ -213,10 +225,10 @@ def format_examples(emg_examples, window_size=50, size_non_overlap=10, spectrogr
         
         # store one window_size of signal
         if len(example) >= window_size:
-            if spectrogram:
+            if spectrogram: # get spectrogram
                 spectrogram_example = calculate_single_example(example.transpose(), frequency=fs)
                 formated_examples.append(np.array(spectrogram_example))
-            else:
+            else: # get TSD features 
                 if not np.sum(example) == 0:   # avoid all zero signals
                     featured_example = getTSD(example.transpose())
                     formated_examples.append(np.array(featured_example).transpose().flatten())
@@ -240,6 +252,9 @@ def read_files_to_format_training_session(path_folder_examples, day_num,
         number_of_gestures: numer of gestures recorded 
         window_size: analysis window size
         size_non_overlap: length of non-overlap portion between each analysis window
+        include_gestures: list of gestures (in integer) to include in processed signals; include all gestures if None
+        spectrogram: whether to process sEMG into spectrograms 
+
     Returns:
         examples_training, labels_training: ndarray of processed signal windows and corresponding labels
     """
@@ -269,13 +284,13 @@ def read_files_to_format_training_session(path_folder_examples, day_num,
                 # print("      READ ", read_file)
                 examples_to_format = pd.read_csv(read_file, header=None).to_numpy()
                 # each file contains 15s (300 rows) of 8 channel signals 
-                print("            data = ", np.shape(examples_to_format))
+                # print("            data = ", np.shape(examples_to_format))
                 
                 examples_formatted = format_examples(examples_to_format,
                                         window_size=window_size,
                                         size_non_overlap=size_non_overlap,
                                         spectrogram=spectrogram)
-                print("            formated = ", np.shape(examples_formatted))
+                # print("            formated = ", np.shape(examples_formatted))
 
                 examples.extend(examples_formatted)
                 labels.extend(np.ones(len(examples_formatted)) * (gesture_index-1))
@@ -301,15 +316,19 @@ def get_data_and_process_it_from_file(path, number_of_gestures=22, number_of_cyc
         window_size: analysis window size
         size_non_overlap: length of non-overlap portion between each analysis window
         num_participant: numer of participants to include; should be integer between 1~5
-        sessions_to_include: array of integers defining which session to include
-        swtich: which of the following case to run
-                case 0 = across wearing locations; participants_num x sessions_num(3) 
-                case 1 = across subjects; sessions_num(3) x participants_num
-                case 2 = across days (among the same subject and wearing location)
-                    when choosing case 2, remember to sepcify which session to include
+        sessions_to_include: array of integers defining which session to include in across day training
+        swtich: determine which of the following case to run
+                case 0 = across wearing locations; processed dataset will be in form participants_num x sessions_num(3) 
+                case 1 = across subjects; processed dataset will be in form sessions_num(3) x participants_num;
+                        when choosing case 1, remember to sepcify which subject will be used for base model 
+                        in start_at_participant
+                case 2 = across days (among the same subject and wearing location);
+                    when choosing case 2, remember to sepcify which session to include in sessions_to_include;
                     one assumption for this case is that only one session (wearing location) is included for training
-        start_at_participant: paramerter for case 1. Indicates which subject is the used as base model for 
-                                DANN and SCADANN training. 
+        start_at_participant: indicates which subject is the used as base model for DANN and SCADANN training 
+                                in across subject training 
+        include_gestures: list of gestures (in integer) to include in processed signals; include all gestures if None
+        spectrogram: whether to process sEMG into spectrograms 
 
     Returns:
         data dictionary containing an array of `examples_training` and `labels_training`
@@ -460,18 +479,19 @@ def read_data_training(path, store_path, number_of_gestures=22, number_of_cycles
         window_size: analysis window size
         size_non_overlap: length of non-overlap portion between each analysis window
         num_participant: numer of participants to include; should be integer between 1~5
-        sessions_to_include: array of integers defining which session to include; 
-                            session 0: neutral position
-                            session 1: inward rotation 
-                            session 2: outward rotation
-        swtich: which of the following case to run
-                case 0 = across wearing locations; participants_num x sessions_num(3) 
-                case 1 = across subjects; sessions_num(3) x participants_num
-                case 2 = across days (among the same subject and wearing location)
-                    when choosing case 2, remember to sepcify which session to include
+        sessions_to_include: array of integers defining which session to include in across day training
+        swtich: determine which of the following case to run
+                case 0 = across wearing locations; processed dataset will be in form participants_num x sessions_num(3) 
+                case 1 = across subjects; processed dataset will be in form sessions_num(3) x participants_num;
+                        when choosing case 1, remember to sepcify which subject will be used for base model 
+                        in start_at_participant
+                case 2 = across days (among the same subject and wearing location);
+                    when choosing case 2, remember to sepcify which session to include in sessions_to_include;
                     one assumption for this case is that only one session (wearing location) is included for training
-        start_at_participant: paramerter for case 1. Indicates which subject is the used as base model for 
-                                DANN and SCADANN training. Remeber to change to appropriate num_participant. 
+        start_at_participant: indicates which subject is the used as base model for DANN and SCADANN training 
+                                in across subject training 
+        include_gestures: list of gestures (in integer) to include in processed signals; include all gestures if None
+        spectrogram: whether to process sEMG into spectrograms 
 
     """
     print("Loading and preparing Training datasets...")

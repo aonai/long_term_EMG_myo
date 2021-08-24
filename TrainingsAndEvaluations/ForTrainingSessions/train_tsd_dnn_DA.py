@@ -212,15 +212,18 @@ def train_DANN(examples_datasets_train, labels_datasets_train, num_kernels,
     Wrapper for trainning and saving a DANN model. 
 
     Args: 
-        examples_datasets: ndarray of input examples
-        labels_datasets: ndarray of labels for each example
-        num_kernels (list of integer): each integer is width of TSD linear block of corresponding layer 
+        examples_datasets_train: ndarray of input examples
+        labels_datasets_train: ndarray of labels for each example
+        num_neurons (list of integer): each integer is width of TSD linear block of corresponding layer or output channels of ConvNet model
         path_weights_to_save_to: where to save trained model
-        path_weights_fine_tuning: path to load normal TSD_DNN weights 
+        path_weights_fine_tuning: path to load normal TSD_DNN or ConvNet weights 
         batch_size:  size of one batch in dataloader
+        number_of_cycles_total: total number of trails in one session
         number_of_classes: number of classes to train
-        feature_vector_input_length: length of one example data (252)
+        feature_vector_input_length: length of one example data (252) for TSD model
         learning_rate
+        neural_net: specify which training model to use; options are 'TSD' and 'ConvNet'
+        filter_size: kernel size of ConvNet model; should be a 2d list of shape (m, 2), where m (4) is number of levels
     """
     participants_train, participants_validation, participants_test = load_dataloaders_training_sessions(
         examples_datasets_train, labels_datasets_train, batch_size=batch_size,
@@ -268,23 +271,27 @@ def train_DANN(examples_datasets_train, labels_datasets_train, num_kernels,
 def test_DANN_on_training_sessions(examples_datasets_train, labels_datasets_train, num_neurons, feature_vector_input_length=252,
                               path_weights_normal='/Weights/TSD', path_weights_DA='/Weights/DANN', algo_name="DANN",
                               save_path='results', number_of_cycles_total=40, cycle_for_test=None, number_of_classes=22,
-                              across_sub=False,neural_net="TSD", filter_size=(4, 10)):
+                              across_sub=False, neural_net="TSD", filter_size=(4, 10)):
     """
-    Test trained model. Stores a txt and npy files that include predictions, ground truths, accuracy table, and 
+    Test trained model. Stores a txt and npy files that include accuracies, predictions, ground truths, and model outputs.
     overall accuracies.
 
     Args: 
         examples_datasets_train: ndarray of input examples
         labels_datasets_train: ndarray of labels for each example
-        num_neurons (list of integer): each integer is width of TSD linear block of corresponding layer 
+        num_neurons (list of integer): each integer is width of TSD linear block of corresponding layer or output channels of ConvNet model
         feature_vector_input_length: size of one example (=252)
-        path_weights_normal: where to load trained TSD model
+        path_weights_normal: where to load trained TSD or ConvNet model
         path_weights_DA: where to load trained DANN model
         algo_name: nickname of model (this will be included in file name of test results)
         save_path: where to save test results
         number_of_cycles_total: total number of trails in one session
         cycle_for_test: which session to use for testing
         number_of_classes: number of classes to train
+        across_sub: whether model is trained across subject; base model weights is always 
+                    stored at /participant_0/best_state_0
+        neural_net: specify which training model to use; options are 'TSD' and 'ConvNet'
+        filter_size: kernel size of ConvNet model; should be a 2d list of shape (m, 2), where m (4) is number of levels
 
     """
     _, _, participants_test = load_dataloaders_training_sessions(examples_datasets_train, labels_datasets_train,
@@ -299,12 +306,14 @@ def test_DANN_on_training_sessions(examples_datasets_train, labels_datasets_trai
         predictions_participant = []
         ground_truth_participant = []
         accuracies_participant = []
+
         if neural_net == 'TSD':
             model = TSD_Network(number_of_class=number_of_classes, num_neurons=num_neurons,
                             feature_vector_input_length=feature_vector_input_length)
         elif neural_net == 'Spectrogram':
             model = SpectrogramConvNet(number_of_class=number_of_classes, num_kernels=num_neurons,
                             kernel_size=filter_size)
+        
         print(np.shape(dataset_test))
         for session_index, training_session_test_data in enumerate(dataset_test):
             if across_sub:

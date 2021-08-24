@@ -16,6 +16,8 @@ def get_gesture_accuracies(ground_truths, predictions, number_of_classes=22, m_n
                 In this case, m_name should be "Sub" and n_name should be "Loc".
                 As a result gesture accuracies for Participant 0 and Wearing Location 0 is a list
                 of 22 accuracies under column name "Sub0_Loc0"
+        path: where to save resulting csv file
+        algo_name: nickname of model (this will be included in file name of results)
         start_at_participant: parameter for recording inter-subject training results 
 
     Returns:
