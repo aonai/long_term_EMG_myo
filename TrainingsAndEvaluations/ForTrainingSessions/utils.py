@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 
 def get_gesture_accuracies(ground_truths, predictions, number_of_classes=22, m_name="Sub", n_name="Loc", 
-                        path='results', algo_name="gesture_accuracies", start_at_participant=0, num_participant=5):
+                        path='results', algo_name="gesture_accuracies", start_at_participant=1, num_participant=5):
     """
     helper function to extract accuracies for each gesture on each condition
 
@@ -27,15 +27,20 @@ def get_gesture_accuracies(ground_truths, predictions, number_of_classes=22, m_n
     """
     column_names = []
     accuracies_gestures = [ [] for _ in range(number_of_classes) ]
-
-    index_participant_list = list(range(start_at_participant-1,start_at_participant+num_participant-2))   
-    if len(index_participant_list) < num_participant:
-        index_participant_list.extend(list(range(start_at_participant-1))) 
+    if start_at_participant == 1:
+        index_participant_list = list(range(num_participant))
+    else:
+        index_participant_list = list(range(start_at_participant-1,num_participant))   
+        if len(index_participant_list) < num_participant:
+            index_participant_list.extend(list(range(start_at_participant-1))) 
     print("index_participant_list ", index_participant_list)
     
     for m, ground_list in enumerate(ground_truths):
         for n, ground in enumerate(ground_list):
-            column_names.append(f"{m_name}{m}_{n_name}{index_participant_list[n]}")
+            if 'Sub' in n_name:
+                column_names.append(f"{m_name}{m}_{n_name}{index_participant_list[n]}")
+            else:
+                column_names.append(f"{m_name}{m}_{n_name}{n+start_at_participant-1}")
             
             pred = predictions[m][n]
             #print("ground  = ", np.shape(ground))

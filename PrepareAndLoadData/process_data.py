@@ -337,7 +337,7 @@ def get_data_and_process_it_from_file(path, number_of_gestures=22, number_of_cyc
     if switch == 1:
         for session_idx in sessions_to_include:
             examples_participant_training_sessions, labels_participant_training_sessions = [], []
-            index_participant_list = list(range(start_at_participant,start_at_participant+num_participant-1))   
+            index_participant_list = list(range(start_at_participant, num_participant+1))   
             if len(index_participant_list) < num_participant:
                 index_participant_list.extend(list(range(1,start_at_participant)))   
             print("index_participant_list ", index_participant_list)           
