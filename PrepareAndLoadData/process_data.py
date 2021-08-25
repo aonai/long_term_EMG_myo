@@ -199,7 +199,6 @@ def getTSD(all_channels_data_in_window):
     feat[np.max(range(Indx.shape[0] * NFPC)) + 1:] = num / den
     return feat
 
-
 def format_examples(emg_examples, window_size=50, size_non_overlap=10, spectrogram=False):
     """ 
     Process EMG signals and then put into one window
@@ -335,12 +334,14 @@ def get_data_and_process_it_from_file(path, number_of_gestures=22, number_of_cyc
     """
     examples_training_sessions_datasets, labels_training_sessions_datasets = [], []
 
-    # load one participant for now
     if switch == 1:
         for session_idx in sessions_to_include:
-            # load one participant data 
             examples_participant_training_sessions, labels_participant_training_sessions = [], []
-            for index_participant in range(start_at_participant,start_at_participant+num_participant):
+            index_participant_list = list(range(start_at_participant,start_at_participant+num_participant-1))   
+            if len(index_participant_list) < num_participant:
+                index_participant_list.extend(list(range(1,start_at_participant)))   
+            print("index_participant_list ", index_participant_list)           
+            for index_participant in index_participant_list:
                 folder_participant = "sub" + str(index_participant)
                 days_of_current_session = index_of_sessions[session_idx]
                 if session_idx in sessions_to_include:
@@ -379,7 +380,6 @@ def get_data_and_process_it_from_file(path, number_of_gestures=22, number_of_cyc
 
     elif switch == 0:
         for index_participant in range(1, 1+num_participant):
-            # load one participant data 
             folder_participant = "sub" + str(index_participant)
             examples_participant_training_sessions, labels_participant_training_sessions = [], []
             for session_idx in sessions_to_include:
@@ -412,8 +412,8 @@ def get_data_and_process_it_from_file(path, number_of_gestures=22, number_of_cyc
             examples_training_sessions_datasets.append(examples_participant_training_sessions)
             labels_training_sessions_datasets.append(labels_participant_training_sessions)
             
-            # participants_num x sessions_num(3) x days_per_session(10)*trail_per_day(4*num_participant) x #examples_window*#mov(26*22=572) x window_size x channel_num
-            # participants_num x sessions_num(3) x days_per_session(10)*trail_per_day(4*num_participant) x #examples_window*#mov(26*22=572)
+            # participants_num x sessions_num(3) x days_per_session(10)*trail_per_day(4) x #examples_window*#mov(26*22=572) x window_size x channel_num
+            # participants_num x sessions_num(3) x days_per_session(10)*trail_per_day(4) x #examples_window*#mov(26*22=572)
             print('all traning examples ', np.shape(examples_training_sessions_datasets))
             print('all traning labels ', np.shape(labels_training_sessions_datasets))
 
@@ -424,7 +424,6 @@ def get_data_and_process_it_from_file(path, number_of_gestures=22, number_of_cyc
         for index_participant in range(1,1+num_participant):
             examples_per_session, labels_per_session = [], []
             for day_num in days_of_current_session:
-                # load one participant data 
                 folder_participant = "sub" + str(index_participant)
         
                 path_folder_examples = path + "/" + folder_participant + "/day" + str(day_num)
@@ -453,8 +452,8 @@ def get_data_and_process_it_from_file(path, number_of_gestures=22, number_of_cyc
         examples_training_sessions_datasets = examples_participant_training_sessions
         labels_training_sessions_datasets = labels_participant_training_sessions
         
-        # participants_num x days_per_session(10) x trail_per_day(4*num_participant) x #examples_window*#mov(26*22=572) x window_size x channel_num
-        # participants_num x days_per_session(10) x trail_per_day(4*num_participant) x #examples_window*#mov(26*22=572)
+        # participants_num x days_per_session(10) x trail_per_day(4) x #examples_window*#mov(26*22=572) x window_size x channel_num
+        # participants_num x days_per_session(10) x trail_per_day(4) x #examples_window*#mov(26*22=572)
         print('all traning examples ', np.shape(examples_training_sessions_datasets))
         print('all traning labels ', np.shape(labels_training_sessions_datasets))
 
