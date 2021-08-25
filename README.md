@@ -22,10 +22,10 @@ i. Specify the following file locations:
 ii. Process raw datasets into 
 * formatted example arrays with 7 features (proposed by [Rami N. Khushaba](https://github.com/RamiKhushaba/getTSDfeat))
 `read_data_training(path=data_dir, store_path=processed_data_dir)`
-* or formatted spectrograms of shape (4, 8, 10) 
+* or formatted spectrograms of shape (4, 8, 10)   
 `read_data_training(path=data_dir, store_path=processed_data_dir, spectrogram=True)`   
 
-iii.Load processed examples and labels   
+iii. Load processed examples and labels   
 ```
 with open(processed_data_dir + "/training_session.pickle", 'rb') as f:
     dataset_training = pickle.load(file=f)
@@ -60,13 +60,13 @@ ii. Test and record results of the base model
 ```
 test_standard_model_on_training_sessions(examples_datasets_train, labels_datasets_train,
                                 num_neurons=<num_kernels_of_each_layer>,  
-                                use_only_first_training=<whether_to_use_fine_tuned model>,
+                                use_only_first_training=<whether_to_use_fine_tuned_model>,
                                 path_weights=<path_base_weights>,
                                 save_path=<path_result>,   
                                 algo_name=<result_file_name>,
                                 number_of_cycles_total=<number_of_cycles_total>,  
                                 number_of_classes=<number_of_classes>,  
-                                cycle_for_test=<testing_session_num>,
+                                cycle_for_test=<testing_trial_num>,
                                 neural_net=<choise_of_model>,
                                 filter_size=<kernel_size_of_ConvNet>)
 ```                             
@@ -94,7 +94,7 @@ test_DANN_on_training_sessions(examples_datasets_train, labels_datasets_train,
                             number_of_cycles_total=<number_of_cycles_total>,
                             path_weights_normal=<path_base_weights>, 
                             number_of_classes=<number_of_classes>,
-                            cycle_for_test=<testing_session_num>, 
+                            cycle_for_test=<testing_trial_num>, 
                             neural_net=<choise_of_model>,
                             filter_size=<kernel_size_of_ConvNet>)
 ```
@@ -121,7 +121,7 @@ test_network_SLADANN(examples_datasets_train=examples_datasets_train,
                     path_weights_SCADANN =<path_SCADANN_weights>, 
                     path_weights_normal=<path_base_weights>,
                     algo_name=<result_file_name>, 
-                    cycle_test=<testing_session_num>,
+                    cycle_test=<testing_trial_num>,
                     number_of_cycles_total=<number_of_cycles_total>,
                     number_of_classes=<number_of_classes>,  
                     save_path = <path_result>, 
@@ -137,7 +137,7 @@ accuracies = results[0]
 ``` 
 Each npy result file includes accuracies, predictions, ground truths, and model outputs in order.
 
-ii. Generate accuracies for each gestures 
+ii. Generate accuracies for each gesture
 ```
 ground_truths = results[1]
 predictions = results[2]
@@ -152,4 +152,4 @@ df = pd.read_csv(<path_result>+'/'+<result_file_name>+'.csv')
 
 ### Results
 In conclusion, SCADANN is feasible in improving training performance for sEMG signals recorded by low-end wearable sensors. Compared to the original TSD, SCADANN improves accuracy by 11±4.6% (avg±sd), 9.6±5.0%, and 9.3±3.5% across all possible user-to-user, day-to-day, and location-to-location cases, respectively.
-The amount of improvement from the base model to SCADANN is random. In a best-case scenario, accuracy increases by 28% (from 28% to 56%). Good growth does not guarantee a good model. In a similar case, accuracy increases by 9% (from 56% to 65%) while obtaining a good resulting accuracy. The performance of SCADANN overall conditions is dependant on how good the base model is while being used in other situations. For instance, when testing models on subject 0 at neutral location, TSD accuracy trained using subject 1 is 19% higher (39% compared to 58%) and SCADANN accuracy is 14% higher (50% compared to 64%) than trained using subject 3. To make the best performance of this unsupervised transfer learning, the base model needs to be of good accuracy as well. This argument is proved by comparing the performance of ConvNet and TSD as the base model. Compared to ConvNet, TSD is better at classifying Myo gestures; it improves accuracy from 77% to 81%, whereas ConvNet improves from 63% to 69% when both models are trained using the same controlling factors. More detailed results can be found in [long-term myo notes](https://github.com/aonai/long_term_myo_notes).
+The amount of improvement from the base model to SCADANN is random. In a best-case scenario, accuracy increases by 28% (from 28% to 56%). A good improvement does not guarantee a good model. In a similar case, accuracy increases by 9% (from 56% to 65%) while obtaining a good resulting accuracy. The performance of SCADANN overall conditions is dependant on how good the base model is while being used in other situations. For instance, when testing models on subject 0 at neutral location, TSD accuracy trained using subject 1 is 19% higher (39% compared to 58%) and SCADANN accuracy is 14% higher (50% compared to 64%) than trained using subject 3. To make the best performance of this unsupervised transfer learning, the base model needs to be of good accuracy as well. This argument is proved by comparing the performance of ConvNet and TSD as the base model. Compared to ConvNet, TSD is better at classifying Myo gestures; it improves accuracy from 77% to 81%, whereas ConvNet improves from 63% to 69% when both models are trained using the same controlling factors. More detailed results can be found in [long-term myo notes](https://github.com/aonai/long_term_myo_notes).
