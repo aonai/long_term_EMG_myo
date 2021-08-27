@@ -117,7 +117,7 @@ def load_checkpoint(model, filename, optimizer=None, scheduler=None, strict=True
     return model, optimizer, scheduler, start_epoch
 
 def train_fine_tuning(examples_datasets_train, labels_datasets_train, num_kernels,
-                    number_of_cycles_total=40, 
+                    number_of_cycles_total=40, number_of_cycle_for_first_training=40,
                     path_weight_to_save_to="Weights/unknown", number_of_classes=22, batch_size=128,
                     feature_vector_input_length=252, learning_rate=0.002515, neural_net='TSD', filter_size=(4,10)):
     """
@@ -139,7 +139,9 @@ def train_fine_tuning(examples_datasets_train, labels_datasets_train, num_kernel
     """ 
     participants_train, participants_validation, _ = load_dataloaders_training_sessions(
         examples_datasets_train, labels_datasets_train, batch_size=batch_size,
-        number_of_cycles_total=number_of_cycles_total)
+        number_of_cycles_total=number_of_cycles_total,
+        number_of_cycles_rest_of_training=number_of_cycles_total,
+        number_of_cycle_for_first_training=number_of_cycle_for_first_training)
 
     print("START TRAINING")
     for participant_i in range(len(participants_train)):
@@ -191,6 +193,7 @@ def test_standard_model_on_training_sessions(examples_datasets_train, labels_dat
                                       feature_vector_input_length=252,
                                       path_weights='/Weights', save_path='results', algo_name="Normal_Training",
                                       use_only_first_training=False, cycle_for_test=3, number_of_cycles_total=40,
+                                      number_of_cycle_for_first_training = 40, 
                                       number_of_classes=22, across_sub=False, neural_net="TSD", filter_size=(4, 10)):
     """
     Test trained model. Stores a txt and npy files that include accuracies, predictions, ground truths, and model outputs.
@@ -208,6 +211,7 @@ def test_standard_model_on_training_sessions(examples_datasets_train, labels_dat
             otherwise use fine tunning weights (trained from all four sessions)
         cycle_for_test: which session to use for testing; default is the last session (3)
         number_of_cycles_total: total number of trails in one session
+        number_of_cycle_for_first_training: total number of trials in the first session
         number_of_classes: number of classes to train
         across_sub: whether model is trained across subject; base model weights is always 
                     stored at /participant_0/best_state_0
@@ -217,7 +221,9 @@ def test_standard_model_on_training_sessions(examples_datasets_train, labels_dat
     """
     _, _, participants_test = load_dataloaders_training_sessions(examples_datasets_train, labels_datasets_train,
                                                                 number_of_cycles_total=number_of_cycles_total,
-                                                                 batch_size=128*3, cycle_for_test=cycle_for_test)
+                                                                number_of_cycles_rest_of_training=number_of_cycles_total,
+                                                                number_of_cycle_for_first_training = number_of_cycle_for_first_training,
+                                                                batch_size=128*3, cycle_for_test=cycle_for_test)
     model_outputs = []
     predictions = []
     ground_truths = []

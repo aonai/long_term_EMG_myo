@@ -206,7 +206,7 @@ def DANN_Training(gesture_classifier, crossEntropyLoss, optimizer_classifier, tr
 def train_DANN(examples_datasets_train, labels_datasets_train, num_kernels, 
                           path_weights_to_save_to="Weights_TSD/DANN", batch_size=512, patience_increment=10,
                           path_weights_fine_tuning="Weights_TSD/TSD",
-                          number_of_cycles_total=40, number_of_classes=22, 
+                          number_of_cycles_total=40, number_of_cycle_for_first_training=40, number_of_classes=22, 
                           feature_vector_input_length=252, learning_rate=0.002515,neural_net="TSD", filter_size=(4, 10)):
     """
     Wrapper for trainning and saving a DANN model. 
@@ -219,6 +219,7 @@ def train_DANN(examples_datasets_train, labels_datasets_train, num_kernels,
         path_weights_fine_tuning: path to load normal TSD_DNN or ConvNet weights 
         batch_size:  size of one batch in dataloader
         number_of_cycles_total: total number of trails in one session
+        number_of_cycle_for_first_training: total number of trials in the first session
         number_of_classes: number of classes to train
         feature_vector_input_length: length of one example data (252) for TSD model
         learning_rate
@@ -227,7 +228,10 @@ def train_DANN(examples_datasets_train, labels_datasets_train, num_kernels,
     """
     participants_train, participants_validation, participants_test = load_dataloaders_training_sessions(
         examples_datasets_train, labels_datasets_train, batch_size=batch_size,
-        number_of_cycles_total=number_of_cycles_total, get_validation_set=True)
+        number_of_cycles_total=number_of_cycles_total, 
+        number_of_cycles_rest_of_training=number_of_cycles_total,
+        number_of_cycle_for_first_training=number_of_cycle_for_first_training,
+        get_validation_set=True)
 
     for participant_i in range(len(participants_train)):
         print("SHAPE SESSIONS: ", np.shape(participants_train[participant_i]))
@@ -270,7 +274,8 @@ def train_DANN(examples_datasets_train, labels_datasets_train, num_kernels,
 
 def test_DANN_on_training_sessions(examples_datasets_train, labels_datasets_train, num_neurons, feature_vector_input_length=252,
                               path_weights_normal='/Weights/TSD', path_weights_DA='/Weights/DANN', algo_name="DANN",
-                              save_path='results', number_of_cycles_total=40, cycle_for_test=None, number_of_classes=22,
+                              save_path='results', number_of_cycles_total=40, number_of_cycle_for_first_training=40,
+                              cycle_for_test=None, number_of_classes=22,
                               across_sub=False, neural_net="TSD", filter_size=(4, 10)):
     """
     Test trained model. Stores a txt and npy files that include accuracies, predictions, ground truths, and model outputs.
@@ -286,6 +291,7 @@ def test_DANN_on_training_sessions(examples_datasets_train, labels_datasets_trai
         algo_name: nickname of model (this will be included in file name of test results)
         save_path: where to save test results
         number_of_cycles_total: total number of trails in one session
+        number_of_cycle_for_first_training: total number of trials in the first session
         cycle_for_test: which session to use for testing
         number_of_classes: number of classes to train
         across_sub: whether model is trained across subject; base model weights is always 
@@ -296,7 +302,9 @@ def test_DANN_on_training_sessions(examples_datasets_train, labels_datasets_trai
     """
     _, _, participants_test = load_dataloaders_training_sessions(examples_datasets_train, labels_datasets_train,
                                                                 number_of_cycles_total=number_of_cycles_total,
-                                                                 batch_size=128*3, cycle_for_test=cycle_for_test)
+                                                                number_of_cycles_rest_of_training=number_of_cycles_total,
+                                                                number_of_cycle_for_first_training=number_of_cycle_for_first_training,
+                                                                batch_size=128*3, cycle_for_test=cycle_for_test)
     model_outputs = []
     predictions = []
     ground_truths = []

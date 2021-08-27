@@ -52,15 +52,16 @@ def get_dataloader(examples_datasets, labels_datasets, number_of_cycle_for_first
                 
             X_associated_with_training_i, Y_associated_with_training_i = [], []
             X_test_associated_with_training_i, Y_test_associated_with_training_i = [], []
-            for cycle in range(number_of_cycles_total):
+            for cycle in range(cycles_to_add_to_train):
+                # print("cycle = ", cycle)
                 examples_cycles = training_index_examples[cycle]
                 labels_cycles = training_index_labels[cycle]
 
                 # print("      GET one examples_cycles ", np.shape(examples_cycles), " at ", cycle)
                 # print("      GET one labels_cycles ", np.shape(labels_cycles), " at ", cycle)
-                # if cycle < cycles_to_add_to_train:
-                X_associated_with_training_i.extend(examples_cycles)
-                Y_associated_with_training_i.extend(labels_cycles)
+                if cycle < cycles_to_add_to_train:
+                    X_associated_with_training_i.extend(examples_cycles)
+                    Y_associated_with_training_i.extend(labels_cycles)
                 if cycle_for_test is not None and cycle_for_test == (cycle%4):
                     # print("      save test cycles ", cycle, "---", cycle_for_test)
                     X_test_associated_with_training_i.extend(examples_cycles)
@@ -115,15 +116,15 @@ def get_dataloader(examples_datasets, labels_datasets, number_of_cycle_for_first
 
 def load_dataloaders_training_sessions(examples_datasets_train, labels_datasets_train,
                                        number_of_cycle_for_first_training=40, number_of_cycles_rest_of_training=40,
-                                       number_of_cycles_total = 40, 
+                                       number_of_cycles_total=40, 
                                        batch_size=128, drop_last=True, shuffle=True, get_validation_set=True,
                                        cycle_for_test=None):
     """
     Wrapper for building dataloaders. 
     
     Args:
-        examples_datasets: ndarray of input examples
-        labels_datasets: ndarray of labels for each example
+        examples_datasets_train: ndarray of input examples
+        labels_datasets_train: ndarray of labels for each example
         number_of_cycle_for_first_training:  number of total trails for the first training session
         number_of_cycles_rest_of_training:  number of total trails for the rest
         number_of_cycles_total: number of trails performed for each session (assuming that all session have the same trail size)

@@ -239,7 +239,7 @@ def format_examples(emg_examples, window_size=50, size_non_overlap=10, spectrogr
 
 def read_files_to_format_training_session(path_folder_examples, day_num,
                                           number_of_cycles, number_of_gestures, window_size,
-                                          size_non_overlap,include_gestures=None, spectrogram=False):
+                                          size_non_overlap, include_gestures=None, spectrogram=False):
     """
     Read csv files in one day, put raw signals into an array, then process the signals using TSD function 
     and put into windows 
@@ -293,7 +293,7 @@ def read_files_to_format_training_session(path_folder_examples, day_num,
 
                 examples.extend(examples_formatted)
                 labels.extend(np.ones(len(examples_formatted)) * (gesture_index-1))
-            
+
         # print("   SHAPE SESSION ", cycle, " EXAMPLES: ", np.shape(examples))
         examples_training.append(examples)
         labels_training.append(labels)
@@ -303,7 +303,8 @@ def read_files_to_format_training_session(path_folder_examples, day_num,
 
 def get_data_and_process_it_from_file(path, number_of_gestures=22, number_of_cycles=4, window_size=50, 
                                         size_non_overlap=10, num_participant=5, sessions_to_include = [0,1,2], 
-                                        switch=0, start_at_participant=1, include_gestures=None, spectrogram=False):
+                                        switch=0, start_at_participant=1, include_gestures=None, spectrogram=False,
+                                        include_in_first=None):
     
     """
     Wrapper for loading data from desired folders. 
@@ -316,7 +317,7 @@ def get_data_and_process_it_from_file(path, number_of_gestures=22, number_of_cyc
         size_non_overlap: length of non-overlap portion between each analysis window
         num_participant: numer of participants to include; should be integer between 1~5
         sessions_to_include: array of integers defining which session to include in across day training
-        swtich: determine which of the following case to run
+        switch: determine which of the following case to run
                 case 0 = across wearing locations; processed dataset will be in form participants_num x sessions_num(3) 
                 case 1 = across subjects; processed dataset will be in form sessions_num(3) x participants_num;
                         when choosing case 1, remember to sepcify which subject will be used for base model 
@@ -328,6 +329,8 @@ def get_data_and_process_it_from_file(path, number_of_gestures=22, number_of_cyc
                                 in across subject training 
         include_gestures: list of gestures (in integer) to include in processed signals; include all gestures if None
         spectrogram: whether to process sEMG into spectrograms 
+        include_in_first: whether to lump multiple sessions in the first session; this param indicates how many 
+                                sessions are included in the first one
 
     Returns:
         data dictionary containing an array of `examples_training` and `labels_training`
@@ -363,9 +366,24 @@ def get_data_and_process_it_from_file(path, number_of_gestures=22, number_of_cyc
                                                                 spectrogram=spectrogram)
                         examples_per_session.extend(examples_training)
                         labels_per_session.extend(labels_training)
-                    examples_participant_training_sessions.append(examples_per_session)
-                    labels_participant_training_sessions.append(labels_per_session)
-                    print("@ traning sessions = ", np.shape(examples_participant_training_sessions))
+
+                    if include_in_first and session_idx < include_in_first and session_idx > 0:
+                        print("Include sub ", session_idx, " in first dataset ", np.shape(examples_participant_training_sessions[0]))
+                        tmp_examples = examples_participant_training_sessions[0].copy()
+                        tmp_examples.extend(examples_per_session)
+                        examples_participant_training_sessions[0] = tmp_examples
+                        tmp_labels = labels_participant_training_sessions[0].copy()
+                        tmp_labels.extend(labels_per_session)
+                        labels_participant_training_sessions[0] = tmp_labels   
+                        print("examples of first session = ", np.shape(examples_per_session[0]))
+                        print("@ traning sessions = ", np.shape(examples_participant_training_sessions))
+                    else:
+                        examples_participant_training_sessions.append(examples_per_session)
+                        labels_participant_training_sessions.append(labels_per_session)
+                        print("@ traning sessions = ", np.shape(examples_participant_training_sessions))
+                    # examples_participant_training_sessions.append(examples_per_session)
+                    # labels_participant_training_sessions.append(labels_per_session)
+                    # print("@ traning sessions = ", np.shape(examples_participant_training_sessions))
 
             print('traning examples ', np.shape(examples_participant_training_sessions))
             print('traning labels ', np.shape(labels_participant_training_sessions))  
@@ -402,9 +420,25 @@ def get_data_and_process_it_from_file(path, number_of_gestures=22, number_of_cyc
                                                                 spectrogram=spectrogram)
                         examples_per_session.extend(examples_training)
                         labels_per_session.extend(labels_training)
-                    examples_participant_training_sessions.append(examples_per_session)
-                    labels_participant_training_sessions.append(labels_per_session)
-                    print("@ traning sessions = ", np.shape(examples_participant_training_sessions))
+                         
+                    if include_in_first and session_idx < include_in_first and session_idx > 0:
+                        print("Include loc ", session_idx, " in first dataset ", np.shape(examples_participant_training_sessions[0]))
+                        tmp_examples = examples_participant_training_sessions[0].copy()
+                        tmp_examples.extend(examples_per_session)
+                        examples_participant_training_sessions[0] = tmp_examples
+                        tmp_labels = labels_participant_training_sessions[0].copy()
+                        tmp_labels.extend(labels_per_session)
+                        labels_participant_training_sessions[0] = tmp_labels   
+                        print("examples of first session = ", np.shape(examples_per_session[0]))
+                        print("@ traning sessions = ", np.shape(examples_participant_training_sessions))
+                    else:
+                        examples_participant_training_sessions.append(examples_per_session)
+                        labels_participant_training_sessions.append(labels_per_session)
+                        print("@ traning sessions = ", np.shape(examples_participant_training_sessions))
+
+                    # examples_participant_training_sessions.append(examples_per_session)
+                    # labels_participant_training_sessions.append(labels_per_session)
+                    # print("@ traning sessions = ", np.shape(examples_participant_training_sessions))
 
             print('traning examples ', np.shape(examples_participant_training_sessions))
             print('traning labels ', np.shape(labels_participant_training_sessions))  
@@ -438,9 +472,22 @@ def get_data_and_process_it_from_file(path, number_of_gestures=22, number_of_cyc
                                                         size_non_overlap=size_non_overlap,
                                                         include_gestures=include_gestures,
                                                         spectrogram=spectrogram)
-                examples_per_session.append(examples_training)
-                labels_per_session.append(labels_training)
-                print("examples_per_session = ", np.shape(examples_per_session))
+ 
+                if include_in_first and day_num < days_of_current_session[include_in_first] \
+                    and day_num > days_of_current_session[0]:
+                    print("Include day ", day_num, " in first dataset ", np.shape(examples_per_session[0]))
+                    tmp_examples = examples_per_session[0].copy()
+                    tmp_examples.extend(examples_training)
+                    examples_per_session[0] = tmp_examples
+                    tmp_labels = labels_per_session[0].copy()
+                    tmp_labels.extend(labels_training)
+                    labels_per_session[0] = tmp_labels   
+                    print("examples of first session = ", np.shape(examples_per_session[0]))
+                    print("examples_per_session = ", np.shape(examples_per_session))
+                else:
+                    examples_per_session.append(examples_training)
+                    labels_per_session.append(labels_training)
+                    print("examples_per_session = ", np.shape(examples_per_session))
 
             examples_participant_training_sessions.append(examples_per_session)
             labels_participant_training_sessions.append(labels_per_session)
@@ -464,7 +511,8 @@ def get_data_and_process_it_from_file(path, number_of_gestures=22, number_of_cyc
 
 def read_data_training(path, store_path, number_of_gestures=22, number_of_cycles=4, window_size=50, 
                         size_non_overlap=10, num_participant=5, sessions_to_include=[0,1,2], 
-                        switch=0,start_at_participant=1, include_gestures = None, spectrogram=False):
+                        switch=0,start_at_participant=1, include_gestures = None, spectrogram=False,
+                        include_in_first = None):
     """
     Wrapper for reading and processing raw data. A npy file containing a dirctory for processed data is stored.
     This directory has key `examples_training` that stores windows of processed emg signal and key `labels_training` 
@@ -472,14 +520,14 @@ def read_data_training(path, store_path, number_of_gestures=22, number_of_cycles
 
     Args:
         path: path to load training data
-        sotre: path to store processed data npy file
+        store_path: path to store processed data npy file
         number_of_gestures: numer of gestures recorded 
         number_of_cycles: number of trials recorded for each motion
         window_size: analysis window size
         size_non_overlap: length of non-overlap portion between each analysis window
         num_participant: numer of participants to include; should be integer between 1~5
         sessions_to_include: array of integers defining which session to include in across day training
-        swtich: determine which of the following case to run
+        switch: determine which of the following case to run
                 case 0 = across wearing locations; processed dataset will be in form participants_num x sessions_num(3) 
                 case 1 = across subjects; processed dataset will be in form sessions_num(3) x participants_num;
                         when choosing case 1, remember to sepcify which subject will be used for base model 
@@ -491,6 +539,8 @@ def read_data_training(path, store_path, number_of_gestures=22, number_of_cycles
                                 in across subject training 
         include_gestures: list of gestures (in integer) to include in processed signals; include all gestures if None
         spectrogram: whether to process sEMG into spectrograms 
+        include_in_first: whether to lump multiple sessions in the first session; this param indicates how many 
+                                sessions are included in the first one
 
     """
     print("Loading and preparing Training datasets...")
@@ -502,7 +552,8 @@ def read_data_training(path, store_path, number_of_gestures=22, number_of_cycles
                                                             switch=switch,
                                                             start_at_participant=start_at_participant,
                                                             include_gestures=include_gestures,
-                                                            spectrogram=spectrogram)
+                                                            spectrogram=spectrogram,
+                                                            include_in_first=include_in_first)
 
     # store dictionary to pickle
     training_session_dataset_dictionnary = {}
