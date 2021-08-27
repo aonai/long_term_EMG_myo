@@ -1,8 +1,9 @@
 # Long-term EMG Myo Library
 * Sonia Yuxiao Lai
 * MSR Final Project  
+* [Post](https://aonai.github.io/linked_posts/myo_gesture_recognition.html)
 &nbsp;
-* Original by [Ulysse Côté-Allard](https://github.com/UlysseCoteAllard/LongTermEMG)
+* Originally by [Ulysse Côté-Allard](https://github.com/UlysseCoteAllard/LongTermEMG)
 * Dataset recorded by [Suguru Kanoga](https://github.com/Suguru55/Wearable_Sensor_Long-term_sEMG_Dataset)
 
 ### Overview
