@@ -367,15 +367,15 @@ def get_data_and_process_it_from_file(path, number_of_gestures=22, number_of_cyc
                         examples_per_session.extend(examples_training)
                         labels_per_session.extend(labels_training)
 
-                    if include_in_first and session_idx < include_in_first and session_idx > 0:
-                        print("Include sub ", session_idx, " in first dataset ", np.shape(examples_participant_training_sessions[0]))
+                    if include_in_first and index_participant < include_in_first+1 and index_participant > 1:
+                        print("Include sub ", index_participant, " in first dataset ", np.shape(examples_participant_training_sessions[0]))
                         tmp_examples = examples_participant_training_sessions[0].copy()
                         tmp_examples.extend(examples_per_session)
                         examples_participant_training_sessions[0] = tmp_examples
                         tmp_labels = labels_participant_training_sessions[0].copy()
                         tmp_labels.extend(labels_per_session)
                         labels_participant_training_sessions[0] = tmp_labels   
-                        print("examples of first session = ", np.shape(examples_per_session[0]))
+                        print("examples of first session = ", np.shape(labels_participant_training_sessions[0]))
                         print("@ traning sessions = ", np.shape(examples_participant_training_sessions))
                     else:
                         examples_participant_training_sessions.append(examples_per_session)
@@ -455,7 +455,12 @@ def get_data_and_process_it_from_file(path, number_of_gestures=22, number_of_cyc
         days_of_current_session = index_of_sessions[sessions_to_include[0]]
         examples_participant_training_sessions, labels_participant_training_sessions = [], []
         print("session ", sessions_to_include[0], " --- process data in days ", days_of_current_session)
-        for index_participant in range(1,1+num_participant):
+        end_at_participant = num_participant+1 if start_at_participant+num_participant<=5 else start_at_participant+num_participant-1
+        index_participant_list = list(range(start_at_participant, end_at_participant+1))   
+        if len(index_participant_list) < num_participant:
+            index_participant_list.extend(list(range(1,start_at_participant)))   
+        print("index_participant_list ", index_participant_list)    
+        for index_participant in index_participant_list:
             examples_per_session, labels_per_session = [], []
             for day_num in days_of_current_session:
                 folder_participant = "sub" + str(index_participant)

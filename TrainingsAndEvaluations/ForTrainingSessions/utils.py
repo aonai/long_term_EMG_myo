@@ -2,7 +2,8 @@ import numpy as np
 import pandas as pd
 
 def get_gesture_accuracies(ground_truths, predictions, number_of_classes=22, m_name="Sub", n_name="Loc", 
-                        path='results', algo_name="gesture_accuracies", start_at_participant=1, num_participant=5):
+                        path='results', algo_name="gesture_accuracies", start_at_participant=1, num_participant=5,
+                        index_participant_list_customized=None, lump_day_at_participant=None):
     """
     helper function to extract accuracies for each gesture on each condition
 
@@ -20,6 +21,8 @@ def get_gesture_accuracies(ground_truths, predictions, number_of_classes=22, m_n
         algo_name: nickname of model (this will be included in file name of results)
         start_at_participant: parameter for recording inter-subject training results num_participant
         num_participant: numer of participants to include; should be integer between 1~5
+        index_participant_list_customized: customzied column names for lumped training
+        lump_day_at_participant: param for lumped day training, specify which subject is included 
 
     Returns:
         accuracies_gestures: ndarray that stores accuracies for each gesture
@@ -27,18 +30,21 @@ def get_gesture_accuracies(ground_truths, predictions, number_of_classes=22, m_n
     """
     column_names = []
     accuracies_gestures = [ [] for _ in range(number_of_classes) ]
-    if start_at_participant == 1:
-        index_participant_list = list(range(num_participant))
+    if index_participant_list_customized:
+        index_participant_list = index_participant_list_customized
     else:
-        index_participant_list = list(range(start_at_participant-1,num_participant))   
-        if len(index_participant_list) < num_participant:
-            index_participant_list.extend(list(range(start_at_participant-1))) 
+        if start_at_participant == 1:
+            index_participant_list = list(range(num_participant))
+        else:
+            index_participant_list = list(range(start_at_participant-1,num_participant))   
+            if len(index_participant_list) < num_participant:
+                index_participant_list.extend(list(range(start_at_participant-1))) 
     print("index_participant_list ", index_participant_list)
     
     for m, ground_list in enumerate(ground_truths):
         for n, ground in enumerate(ground_list):
-            if 'Sub' in n_name:
-                column_names.append(f"{m_name}{m}_{n_name}{index_participant_list[n]}")
+            if 'Sub' in n_name or lump_day_at_participant:
+                column_names.append(f"{m_name}{lump_day_at_participant}_{n_name}{index_participant_list[n]}")
             else:
                 column_names.append(f"{m_name}{m}_{n_name}{n+start_at_participant-1}")
             
