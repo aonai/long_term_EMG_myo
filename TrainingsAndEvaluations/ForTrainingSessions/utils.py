@@ -43,7 +43,9 @@ def get_gesture_accuracies(ground_truths, predictions, number_of_classes=22, m_n
     
     for m, ground_list in enumerate(ground_truths):
         for n, ground in enumerate(ground_list):
-            if 'Sub' in n_name or lump_day_at_participant:
+            if 'Sub' in n_name:
+                column_names.append(f"{m_name}{m}_{n_name}{index_participant_list[n]}")
+            elif lump_day_at_participant is not None:
                 column_names.append(f"{m_name}{lump_day_at_participant}_{n_name}{index_participant_list[n]}")
             else:
                 column_names.append(f"{m_name}{m}_{n_name}{n+start_at_participant-1}")

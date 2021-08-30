@@ -304,7 +304,7 @@ def read_files_to_format_training_session(path_folder_examples, day_num,
 def get_data_and_process_it_from_file(path, number_of_gestures=22, number_of_cycles=4, window_size=50, 
                                         size_non_overlap=10, num_participant=5, sessions_to_include = [0,1,2], 
                                         switch=0, start_at_participant=1, include_gestures=None, spectrogram=False,
-                                        include_in_first=None):
+                                        include_in_first=None, across_sub_customized_order=None):
     
     """
     Wrapper for loading data from desired folders. 
@@ -331,6 +331,7 @@ def get_data_and_process_it_from_file(path, number_of_gestures=22, number_of_cyc
         spectrogram: whether to process sEMG into spectrograms 
         include_in_first: whether to lump multiple sessions in the first session; this param indicates how many 
                                 sessions are included in the first one
+        index_participant_list: customized order for across subject training
 
     Returns:
         data dictionary containing an array of `examples_training` and `labels_training`
@@ -340,9 +341,12 @@ def get_data_and_process_it_from_file(path, number_of_gestures=22, number_of_cyc
     if switch == 1:
         for session_idx in sessions_to_include:
             examples_participant_training_sessions, labels_participant_training_sessions = [], []
-            index_participant_list = list(range(start_at_participant, num_participant+1))   
-            if len(index_participant_list) < num_participant:
-                index_participant_list.extend(list(range(1,start_at_participant)))   
+            if across_sub_customized_order:
+                index_participant_list = across_sub_customized_order
+            else:
+                index_participant_list = list(range(start_at_participant, num_participant+1))   
+                if len(index_participant_list) < num_participant:
+                    index_participant_list.extend(list(range(1,start_at_participant)))   
             print("index_participant_list ", index_participant_list)           
             for index_participant in index_participant_list:
                 folder_participant = "sub" + str(index_participant)
@@ -517,7 +521,7 @@ def get_data_and_process_it_from_file(path, number_of_gestures=22, number_of_cyc
 def read_data_training(path, store_path, number_of_gestures=22, number_of_cycles=4, window_size=50, 
                         size_non_overlap=10, num_participant=5, sessions_to_include=[0,1,2], 
                         switch=0,start_at_participant=1, include_gestures = None, spectrogram=False,
-                        include_in_first = None):
+                        include_in_first = None, across_sub_customized_order=None):
     """
     Wrapper for reading and processing raw data. A npy file containing a dirctory for processed data is stored.
     This directory has key `examples_training` that stores windows of processed emg signal and key `labels_training` 
@@ -546,6 +550,7 @@ def read_data_training(path, store_path, number_of_gestures=22, number_of_cycles
         spectrogram: whether to process sEMG into spectrograms 
         include_in_first: whether to lump multiple sessions in the first session; this param indicates how many 
                                 sessions are included in the first one
+        index_participant_list: list of participant index (starting from 1) of customized order for across subject training
 
     """
     print("Loading and preparing Training datasets...")
@@ -558,7 +563,8 @@ def read_data_training(path, store_path, number_of_gestures=22, number_of_cycles
                                                             start_at_participant=start_at_participant,
                                                             include_gestures=include_gestures,
                                                             spectrogram=spectrogram,
-                                                            include_in_first=include_in_first)
+                                                            include_in_first=include_in_first,
+                                                            across_sub_customized_order=across_sub_customized_order)
 
     # store dictionary to pickle
     training_session_dataset_dictionnary = {}
