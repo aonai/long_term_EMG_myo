@@ -5,8 +5,8 @@ import torch
 from torch.utils.data import TensorDataset
 
 
-def get_dataloader(examples_datasets, labels_datasets, number_of_cycle_for_first_training=40,
-                   number_of_cycles_rest_of_training=40, batch_size=128,
+def get_dataloader(examples_datasets, labels_datasets, number_of_cycle_for_first_training=None,
+                   number_of_cycles_rest_of_training=None, batch_size=128,
                    drop_last=True, shuffle=True,
                    number_of_cycles_total=40, validation_set_ratio=0.1, get_validation_set=True, cycle_for_test=None):
     """
@@ -46,7 +46,7 @@ def get_dataloader(examples_datasets, labels_datasets, number_of_cycle_for_first
         # X = signals, Y = labels
         for training_index_examples, training_index_labels in zip(participant_examples, participant_labels):
             print("   GET one training_index_examples ", np.shape(training_index_examples), " at ", k)
-            cycles_to_add_to_train = number_of_cycle_for_first_training
+            cycles_to_add_to_train = number_of_cycles_total if number_of_cycle_for_first_training is None else number_of_cycle_for_first_training
             if k > 0:
                 cycles_to_add_to_train = number_of_cycles_rest_of_training
                 

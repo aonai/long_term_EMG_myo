@@ -117,7 +117,7 @@ def load_checkpoint(model, filename, optimizer=None, scheduler=None, strict=True
     return model, optimizer, scheduler, start_epoch
 
 def train_fine_tuning(examples_datasets_train, labels_datasets_train, num_kernels,
-                    number_of_cycles_total=40, number_of_cycle_for_first_training=40,
+                    number_of_cycles_total=40, number_of_cycle_for_first_training=None,
                     path_weight_to_save_to="Weights/unknown", number_of_classes=22, batch_size=128,
                     feature_vector_input_length=252, learning_rate=0.002515, neural_net='TSD', filter_size=(4,10)):
     """
@@ -192,8 +192,8 @@ def train_fine_tuning(examples_datasets_train, labels_datasets_train, num_kernel
 def test_standard_model_on_training_sessions(examples_datasets_train, labels_datasets_train, num_neurons,
                                       feature_vector_input_length=252,
                                       path_weights='/Weights', save_path='results', algo_name="Normal_Training",
-                                      use_only_first_training=False, cycle_for_test=3, number_of_cycles_total=40,
-                                      number_of_cycle_for_first_training = 40, 
+                                      use_only_first_training=False, cycle_for_test=3, number_of_cycles_total=None,
+                                      number_of_cycle_for_first_training = None, 
                                       number_of_classes=22, across_sub=False, neural_net="TSD", filter_size=(4, 10)):
     """
     Test trained model. Stores a txt and npy files that include accuracies, predictions, ground truths, and model outputs.

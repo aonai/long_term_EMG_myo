@@ -230,7 +230,7 @@ def run_SCADANN_training_sessions(examples_datasets, labels_datasets, num_kernel
                                   path_weights_Adversarial_training="Weights/DANN",
                                   path_weights_Normal_training="Weights/TSD",
                                   number_of_cycles_total=40,
-                                  number_of_cycle_for_first_training=40,
+                                  number_of_cycle_for_first_training=None,
                                   number_of_classes=22, 
                                   percentage_same_gesture_stable=0.75,
                                   learning_rate=0.002515, neural_net='TSD', filter_size=(4, 10)):
@@ -335,7 +335,7 @@ def test_network_SCADANN(examples_datasets_train, labels_datasets_train, num_neu
                          path_weights_SCADANN ="Weights_TSD/SCADANN",
                          path_weights_normal="Weights_TSD/TSD",
                          algo_name="SCADANN", cycle_test=None, number_of_cycles_total=40,
-                         number_of_cycle_for_first_training=40,
+                         number_of_cycle_for_first_training=None,
                          number_of_classes=22, save_path = 'results_tsd', across_sub=False,
                          neural_net="TSD", filter_size=(4, 10)):
     """
